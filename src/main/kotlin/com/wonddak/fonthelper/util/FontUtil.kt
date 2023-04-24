@@ -11,6 +11,11 @@ object FontUtil {
     const val NORMAL = "Normal"
     const val ITALIC = "Italic"
 
+    data class FontCheck(
+            val isItalic: Boolean,
+            val weightIndex: Int
+    )
+
     private val indexToWeight: Map<Int, String> = mapOf(
             0 to "Thin",
             1 to "ExtraLight",
@@ -44,7 +49,7 @@ object FontUtil {
     private val fontPath = "${getProjectRoot()!!}/app/src/main/res/font"
     private val classPath = "${getProjectRoot()!!}/app/src/main/java"
 
-    fun makeFileName(name: String, index: Int, isItalic: Boolean): String {
+    private fun makeFileName(name: String, index: Int, isItalic: Boolean): String {
         val st = StringBuilder()
         st.append(name.lowercase())
         st.append("_")
@@ -57,8 +62,12 @@ object FontUtil {
         return st.toString()
     }
 
+    private fun makeFileName(name: String, fontCheck: FontCheck): String {
+        return makeFileName(name,fontCheck.weightIndex,fontCheck.isItalic)
+    }
 
-    fun copyFontFile(srcPath: String, name: String) {
+
+    private fun copyFontFile(srcPath: String, name: String) {
         // Source file
         val sourceFile = File(srcPath)
 
@@ -82,9 +91,31 @@ object FontUtil {
         FileUtil.copy(sourceFile, destinationFile)
     }
 
+    fun copyFontFile(srcPath: String, fileName: String, fontCheck: FontCheck) {
+        copyFontFile(srcPath, makeFileName(fileName, fontCheck))
+    }
 
-    fun makeFontFamily(packageName: String, name: String, normalCheck: List<Int>, italicCheck: List<Int>) {
 
+    fun makeFontFamily(packageName: String, name: String, fontCheck: List<FontCheck>) {
+        val project = ProjectManager.getInstance().defaultProject
+        val directory = VfsUtil.createDirectoryIfMissing("$classPath/${packageName.replace(".", "//")}")
+        val fileName = "${name[0].uppercase()}${name.slice(IntRange(1, name.length - 1))}.kt"
+
+        WriteCommandAction.runWriteCommandAction(project) {
+            directory?.let { directory ->
+                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
+                var psiFile = psiDirectory.findFile(fileName)
+                psiFile?.delete()
+                psiFile = psiDirectory.createFile(fileName)
+                psiFile.virtualFile.setBinaryContent(makeContentString(packageName, name, fontCheck).toByteArray())
+                // Refresh the directory
+                directory.refresh(false, true)
+                VfsUtil.createDirectoryIfMissing(fontPath)?.refresh(false, true)
+            }
+        }
+    }
+
+    fun makeContentString(packageName: String, name: String, fontCheck: List<FontCheck>): String {
         fun makeFontString(index: Int, isItalic: Boolean): String {
             val st = StringBuilder()
             val type = getWeightTextByIndex(index)
@@ -102,47 +133,22 @@ object FontUtil {
             return st.toString()
         }
 
-        val project = ProjectManager.getInstance().defaultProject
-        val directory = VfsUtil.createDirectoryIfMissing("$classPath/${packageName.replace(".", "//")}")
-        val fileName = "${name[0].uppercase()}${name.slice(IntRange(1, name.length - 1))}.kt"
+        val st = StringBuilder()
+        st.append("package ")
+        st.append(packageName)
+        st.append("\n")
+        st.append("\n")
+        st.append("import androidx.compose.ui.text.font.Font\n")
+        st.append("import androidx.compose.ui.text.font.FontFamily\n")
+        st.append("import androidx.compose.ui.text.font.FontStyle\n")
+        st.append("import androidx.compose.ui.text.font.FontWeight\n")
+        st.append("\n")
+        st.append("val ${name.lowercase()} = FontFamily(\n")
+        st.append(fontCheck.joinToString(",\n") { makeFontString(it.weightIndex, it.isItalic) })
+        st.append("\n")
+        st.append(")")
 
-        WriteCommandAction.runWriteCommandAction(project) {
-            directory?.let { directory ->
-                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
-                var psiFile = psiDirectory.findFile(fileName)
-                psiFile?.delete()
-                psiFile = psiDirectory.createFile(fileName)
-
-                val st = StringBuilder()
-                st.append("package ")
-                st.append(packageName)
-                st.append("\n")
-                st.append("\n")
-                st.append("import androidx.compose.ui.text.font.Font\n")
-                st.append("import androidx.compose.ui.text.font.FontFamily\n")
-                st.append("import androidx.compose.ui.text.font.FontStyle\n")
-                st.append("import androidx.compose.ui.text.font.FontWeight\n")
-                st.append("\n")
-                st.append("val ${name.lowercase()} = FontFamily(\n")
-
-                val list = arrayListOf<String>()
-                list.addAll(normalCheck.map { makeFontString(it, false) })
-                list.addAll(italicCheck.map { makeFontString(it, true) })
-                st.append(list.joinToString(",\n"))
-                st.append("\n")
-                st.append(")")
-
-                // Add content to the Kotlin file
-                val fileContent = st.toString().trimIndent()
-
-                psiFile.virtualFile.setBinaryContent(fileContent.toByteArray())
-
-
-                // Refresh the directory
-                directory.refresh(false, true)
-                VfsUtil.createDirectoryIfMissing(fontPath)?.refresh(false, true)
-            }
-        }
+        return st.toString().trimIndent()
     }
 
 }

@@ -1,28 +1,18 @@
 package com.wonddak.fonthelper
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil
-import com.intellij.psi.impl.file.PsiDirectoryFactory
+import com.wonddak.fonthelper.util.FontUtil
 import java.awt.*
-import java.io.File
 import javax.swing.*
 
 
 class FontHelperDialog : DialogWrapper(true) {
     private lateinit var titleRow: JPanel
     private lateinit var fontPanel: JPanel
-
-    private val indexToString: Map<Int, String> = mapOf(
-            0 to "Thin",
-            1 to "Normal",
-            2 to "Medium",
-            3 to "Bold",
-            4 to "Black"
-    )
 
     init {
         init()
@@ -32,11 +22,18 @@ class FontHelperDialog : DialogWrapper(true) {
     override fun createCenterPanel(): JComponent {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+
         titleRow = makeTitleRow("Input your Font Class Name")
         panel.add(titleRow)
         panel.add(Box.createVerticalStrut(10)) // add some space between the rows
+
+        val infoPanel = JPanel()
+        infoPanel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+
+
         fontPanel = makeFontTable()
         panel.add(fontPanel)
+
         return panel
     }
 
@@ -53,10 +50,8 @@ class FontHelperDialog : DialogWrapper(true) {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
-        for (i in 0..4) {
-            val row = makeTypeRow(
-                    indexToString[i]!!
-            )
+        for (i in 0 until FontUtil.getWeightCount()) {
+            val row = makeTypeRow(FontUtil.getWeightTextByIndex(i))
             panel.add(row)
             panel.add(Box.createVerticalStrut(10)) // add some space between the rows
         }
@@ -68,12 +63,18 @@ class FontHelperDialog : DialogWrapper(true) {
     ): JPanel {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+
         val labelComponent = JLabel(label)
-        val normalTextField = makeTextFieldWithBrowseButton("Normal")
-        val italicTextField = makeTextFieldWithBrowseButton("Italic")
+        labelComponent.horizontalAlignment = SwingConstants.CENTER
+        labelComponent.preferredSize = Dimension(100, labelComponent.preferredSize.height)
         panel.add(labelComponent)
+
+        val normalTextField = makeTextFieldWithBrowseButton(FontUtil.NORMAL)
         panel.add(normalTextField)
+
+        val italicTextField = makeTextFieldWithBrowseButton(FontUtil.ITALIC)
         panel.add(italicTextField)
+
         return panel
     }
 
@@ -99,34 +100,29 @@ class FontHelperDialog : DialogWrapper(true) {
     }
 
     override fun doOKAction() {
-        var fileTitle = ""
-
-        var fontPath = "${getProjectRoot()!!}/app/src/main/res/font"
-        var classPath = "${getProjectRoot()!!}/app/src/main/java"
+        var fileName = ""
 
         var normalCheck = mutableListOf<Int>()
         var italicCheck = mutableListOf<Int>()
 
         titleRow.getComponent(1).let { component ->
             if (component is JTextField) {
-                fileTitle = component.text
+                fileName = component.text
             }
         }
 
-        if (classPath.isEmpty() || fontPath.isEmpty() || fileTitle.isEmpty()) {
+        if (fileName.length <= 2) {
             return
         }
 
-        println("Font paths:")
-        for (i in 0..4) {
+        for (i in 0 until FontUtil.getWeightCount()) {
             val find = fontPanel.getComponent(2 * i)
-            val type = indexToString[i]!!
             if (find is JPanel) {
                 val normal = find.getComponent(1)
                 if (normal is TextFieldWithBrowseButton) {
                     normal.text.let { path ->
                         if (path.isNotEmpty()) {
-                            copyFontFile(path, fontPath, "${fileTitle.lowercase()}_${type.lowercase()}.ttf")
+                            FontUtil.copyFontFile(path, FontUtil.makeFileName(fileName, i, false))
                             normalCheck.add(i)
                         }
                     }
@@ -135,100 +131,17 @@ class FontHelperDialog : DialogWrapper(true) {
                 if (italic is TextFieldWithBrowseButton) {
                     italic.text.let { path ->
                         if (path.isNotEmpty()) {
-                            copyFontFile(path, fontPath, "${fileTitle.lowercase()}_${type.lowercase()}_italic.ttf")
+                            FontUtil.copyFontFile(path, FontUtil.makeFileName(fileName, i, true))
                             italicCheck.add(i)
                         }
                     }
                 }
             }
         }
-        makeFontFamily(classPath, fileTitle, normalCheck, italicCheck)
+        FontUtil.makeFontFamily("com.example.myapplication", fileName, normalCheck, italicCheck)
 
         super.doOKAction()
 
-    }
-
-    private fun copyFontFile(path: String, dest: String, name: String) {
-        // Source file
-        val sourceFile = File(path)
-
-        // Destination directory
-        val destinationDir = File(dest)
-
-        // Create the destination directory if it doesn't exist
-        if (!destinationDir.exists()) {
-            destinationDir.mkdirs()
-        }
-
-        // Destination file
-        val destinationFile = File(destinationDir, name)
-
-        // Copy the file
-        FileUtil.copy(sourceFile, destinationFile)
-    }
-
-
-    private fun makeFontFamily(dest: String, name: String, normalCheck: List<Int>, italicCheck: List<Int>) {
-        fun makeFontString(index: Int, isItalic: Boolean): String {
-            val st = StringBuilder()
-            st.append("\tFont(R.font.${name.lowercase()}_${indexToString[index]!!.lowercase()}")
-            if (isItalic) {
-                st.append("_italic")
-            }
-            st.append(", FontWeight.${indexToString[index]}, FontStyle.")
-            if (isItalic) {
-                st.append("Italic")
-            } else {
-                st.append("Normal")
-            }
-            st.append(")")
-            return st.toString()
-        }
-
-        val project = ProjectManager.getInstance().defaultProject
-        val directory = VfsUtil.createDirectoryIfMissing(dest)
-        val fileName = "${name}.kt"
-        directory?.let { directory ->
-            val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
-            val psiFile = psiDirectory.createFile(fileName)
-
-            val st = StringBuilder()
-            st.append("import androidx.compose.ui.text.font.Font\n")
-            st.append("import androidx.compose.ui.text.font.FontFamily\n")
-            st.append("import androidx.compose.ui.text.font.FontStyle\n")
-            st.append("import androidx.compose.ui.text.font.FontWeight\n")
-            st.append("\n")
-            st.append("val $name = FontFamily(\n")
-
-            val list = arrayListOf<String>()
-            list.addAll(normalCheck.map { makeFontString(it, false) })
-            list.addAll(italicCheck.map { makeFontString(it, true) })
-            st.append(list.joinToString(",\n"))
-            st.append("\n")
-            st.append(")")
-
-            // Add content to the Kotlin file
-            val fileContent = st.toString().trimIndent()
-            try {
-                psiFile.virtualFile.setBinaryContent(fileContent.toByteArray())
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-
-            // Refresh the directory
-            directory.refresh(false, true)
-        }
-
-    }
-
-    private fun getProjectRoot(): String? {
-        val projectManager = ProjectManager.getInstance()
-        val openProjects = projectManager.openProjects
-        return if (openProjects.isNotEmpty()) {
-            openProjects[0].basePath
-        } else {
-            null
-        }
     }
 
     override fun doCancelAction() {

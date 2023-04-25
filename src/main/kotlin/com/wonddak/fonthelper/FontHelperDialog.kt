@@ -31,9 +31,7 @@ class FontHelperDialog : DialogWrapper(true) {
         panel.add(makePackageNameRow("Input your PackageName"))
 
         panel.add(Box.createVerticalStrut(10)) // add some space between the rows
-
-        val infoPanel = JPanel()
-        infoPanel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
+        panel.add(JLabel("input Font File(.ttf) [Left : Normal]  [Right : Italic]"))
 
         panel.add(makeFontTable())
 

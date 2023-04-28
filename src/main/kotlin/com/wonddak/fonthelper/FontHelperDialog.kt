@@ -1,9 +1,16 @@
 package com.wonddak.fonthelper
 
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
+import com.intellij.openapi.module.ModuleManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ModuleRootManager
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.PathUtil
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import java.awt.*
 import java.awt.datatransfer.DataFlavor
 import java.io.File
@@ -13,192 +20,77 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
-class FontHelperDialog : DialogWrapper(true) {
-    private var fileName: String = ""
-    private var packageName: String = ""
-    private val normalArray: Array<String>
-    private val italicArray: Array<String>
+class FontHelperDialog(
+    private val project: Project
+) : DialogWrapper(true) {
+
+    companion object {
+        // Class Name and Variable Name
+        private var fileName: String = ""
+
+        val normalArray: Array<String> = Array(FontUtil.getWeightCount()) { "" }
+        val italicArray: Array<String> = Array(FontUtil.getWeightCount()) { "" }
+
+        //Spinner List (key : name ,value : real path)
+        val spinnerList: MutableMap<String, String> = mutableMapOf()
+    }
+
 
     init {
         init()
         title = "Font Helper"
-        normalArray = Array(FontUtil.getWeightCount()) { "" }
-        italicArray = Array(FontUtil.getWeightCount()) { "" }
+        PathUtil.base = project.basePath!!
     }
 
+    /**
+     * make Dialog UI
+     */
     override fun createCenterPanel(): JComponent {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
-        panel.add(makeTitleRow("Input Font Class Name"))
-        panel.add(makePackageNameRow("Input your PackageName"))
+        panel.add(
+            JPanelUI.makeInputRow("Input Font Class Name") { text ->
+                fileName = text
+            }
+        )
+        panel.add(
+            JPanelUI.makeInputRow("Input your PackageName") { text ->
+                PathUtil.packageName = text
+            }
+        )
+
+        panel.add(
+            JPanelUI.makeModuleSpinner(project) { text ->
+                PathUtil.module = text
+            }
+        )
 
         panel.add(Box.createVerticalStrut(10)) // add some space between the rows
         panel.add(JLabel("input Font File(.ttf) [Left : Normal]  [Right : Italic]"))
 
-        panel.add(makeFontTable())
+        panel.add(JPanelUI.makeFontTable())
 
         return panel
     }
 
-    private fun makeInputRow(title: String, updateAction: (text: String) -> Unit): JPanel {
-        val panel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val label = JLabel(title)
-        label.horizontalAlignment = SwingConstants.CENTER
-        label.preferredSize = Dimension(250, label.preferredSize.height)
-
-        val textField = JTextField(20)
-        val dl: DocumentListener = object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            override fun removeUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            override fun changedUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            fun updateFieldState() {
-                updateAction(textField.text)
-            }
-        }
-        textField.document.addDocumentListener(dl)
-        panel.add(label)
-        panel.add(textField)
-        return panel
-    }
-
-    private fun makeTitleRow(title: String): JPanel {
-        return makeInputRow(title) { text ->
-            fileName = text
-        }
-    }
-
-    private fun makePackageNameRow(title: String): JPanel {
-        return makeInputRow(title) { text ->
-            packageName = text
-        }
-    }
-
-
-    private fun makeFontTable(): JPanel {
-        val panel = JPanel()
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-
-        for (i in 0 until FontUtil.getWeightCount()) {
-            val row = makeTypeRow(i)
-            panel.add(row)
-            panel.add(Box.createVerticalStrut(10)) // add some space between the rows
-        }
-        return panel
-    }
-
-    private fun makeTypeRow(
-        index: Int
-    ): JPanel {
-        val panel = JPanel()
-        panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
-
-        val labelComponent = JLabel(FontUtil.getWeightTextByIndex(index))
-        labelComponent.horizontalAlignment = SwingConstants.CENTER
-        labelComponent.preferredSize = Dimension(100, labelComponent.preferredSize.height)
-        panel.add(labelComponent)
-
-        val normalTextField = makeTextFieldWithBrowseButton(FontUtil.NORMAL) { path ->
-            normalArray[index] = path
-        }
-        panel.add(normalTextField)
-
-        val italicTextField = makeTextFieldWithBrowseButton(FontUtil.ITALIC) { path ->
-            italicArray[index] = path
-        }
-        panel.add(italicTextField)
-
-        return panel
-    }
-
-    private fun makeTextFieldWithBrowseButton(
-        type: String,
-        updatePath: (path: String) -> Unit
-    ): TextFieldWithBrowseButton {
-        val textField = TextFieldWithBrowseButton()
-
-        textField.addBrowseFolderListener(
-            "Select $type font file",
-            "Select $type font file",
-            null,
-            FileChooserDescriptor(true, false, false, false, false, false),
-        )
-        textField.textField.columns = 20
-        textField.isEditable = false
-
-        val dl: DocumentListener = object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            override fun removeUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            override fun changedUpdate(e: DocumentEvent) {
-                updateFieldState()
-            }
-
-            fun updateFieldState() {
-                updatePath(textField.text)
-            }
-        }
-        textField.textField.document.addDocumentListener(dl)
-
-        // Add file path drag and drop
-        textField.textField.transferHandler = object : TransferHandler() {
-            override fun importData(support: TransferSupport): Boolean {
-                if (!canImport(support)) {
-                    return false
-                }
-
-                val transferable = support.transferable
-                return try {
-                    val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
-                    if (files.size == 1) {
-                        textField.text = files[0].absolutePath
-                        true
-                    } else {
-                        false
-                    }
-                } catch (e: UnsupportedClassVersionError) {
-                    e.printStackTrace()
-                    false
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                    false
-                }
-            }
-
-            override fun canImport(support: TransferSupport): Boolean {
-                return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
-            }
-        }
-
-        val icon = UIManager.getIcon("FileView.fileIcon")
-        textField.setButtonIcon(icon)
-        return textField
-    }
 
     override fun doOKAction() {
-        var fontCheckList = mutableListOf<FontUtil.FontCheck>()
+        val fontCheckList = mutableListOf<FontUtil.FontCheck>()
+
+        println(PathUtil.getFontPath())
+        println(PathUtil.getClassPath())
         if (fileName.length <= 2) {
             return
         }
-        if (packageName.isEmpty()) {
+        if (PathUtil.packageName.isEmpty()) {
             return
         }
+        if (PathUtil.module.isEmpty()) {
+            return
+        }
+
         normalArray.forEachIndexed { index, path ->
-            println("$index - $path")
             if (path.isNotEmpty()) {
                 val fontCheck = FontUtil.FontCheck(false, index)
                 FontUtil.copyFontFile(path, fileName, fontCheck)
@@ -207,7 +99,6 @@ class FontHelperDialog : DialogWrapper(true) {
         }
 
         italicArray.forEachIndexed { index, path ->
-            println("$index - $path")
             if (path.isNotEmpty()) {
                 val fontCheck = FontUtil.FontCheck(true, index)
                 FontUtil.copyFontFile(path, fileName, fontCheck)
@@ -215,7 +106,7 @@ class FontHelperDialog : DialogWrapper(true) {
             }
         }
 
-        FontUtil.makeFontFamily(packageName, fileName, fontCheckList)
+        FontUtil.makeFontFamily(fileName, fontCheckList)
 
         super.doOKAction()
 

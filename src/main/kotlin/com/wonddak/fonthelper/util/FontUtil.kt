@@ -36,19 +36,6 @@ object FontUtil {
         return indexToWeight.size
     }
 
-    private fun getProjectRoot(): String? {
-        val projectManager = ProjectManager.getInstance()
-        val openProjects = projectManager.openProjects
-        return if (openProjects.isNotEmpty()) {
-            openProjects[0].basePath
-        } else {
-            null
-        }
-    }
-
-    private val fontPath = "${getProjectRoot()!!}/app/src/main/res/font"
-    private val classPath = "${getProjectRoot()!!}/app/src/main/java"
-
     private fun makeFileName(name: String, index: Int, isItalic: Boolean): String {
         val st = StringBuilder()
         st.append(name.lowercase())
@@ -72,7 +59,7 @@ object FontUtil {
         val sourceFile = File(srcPath)
 
         // Destination directory
-        val destinationDir = File(fontPath)
+        val destinationDir = File(PathUtil.getFontPath())
 
         // Create the destination directory if it doesn't exist
         if (!destinationDir.exists()) {
@@ -96,9 +83,10 @@ object FontUtil {
     }
 
 
-    fun makeFontFamily(packageName: String, name: String, fontCheck: List<FontCheck>) {
+    fun makeFontFamily(name: String, fontCheck: List<FontCheck>) {
         val project = ProjectManager.getInstance().defaultProject
-        val directory = VfsUtil.createDirectoryIfMissing("$classPath/${packageName.replace(".", "//")}")
+
+        val directory = VfsUtil.createDirectoryIfMissing(PathUtil.getClassPath())
         val fileName = "${name[0].uppercase()}${name.slice(IntRange(1, name.length - 1))}.kt"
 
         WriteCommandAction.runWriteCommandAction(project) {
@@ -107,15 +95,13 @@ object FontUtil {
                 var psiFile = psiDirectory.findFile(fileName)
                 psiFile?.delete()
                 psiFile = psiDirectory.createFile(fileName)
-                psiFile.virtualFile.setBinaryContent(makeContentString(packageName, name, fontCheck).toByteArray())
-                // Refresh the directory
-                directory.refresh(false, true)
-                VfsUtil.createDirectoryIfMissing(fontPath)?.refresh(false, true)
+                psiFile.virtualFile.setBinaryContent(makeContentString(name, fontCheck).toByteArray())
             }
         }
+        PathUtil.refresh()
     }
 
-    fun makeContentString(packageName: String, name: String, fontCheck: List<FontCheck>): String {
+    fun makeContentString(name: String, fontCheck: List<FontCheck>): String {
         fun makeFontString(index: Int, isItalic: Boolean): String {
             val st = StringBuilder()
             val type = getWeightTextByIndex(index)
@@ -134,9 +120,11 @@ object FontUtil {
         }
 
         val st = StringBuilder()
-        st.append("package ")
-        st.append(packageName)
-        st.append("\n")
+        if (PathUtil.packageName.isNotEmpty()) {
+            st.append("package ")
+            st.append(PathUtil.packageName)
+            st.append("\n")
+        }
         st.append("\n")
         st.append("import androidx.compose.ui.text.font.Font\n")
         st.append("import androidx.compose.ui.text.font.FontFamily\n")

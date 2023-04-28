@@ -5,6 +5,9 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.util.FontUtil
 import java.awt.*
+import java.awt.datatransfer.DataFlavor
+import java.io.File
+import java.io.IOException
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
@@ -94,7 +97,7 @@ class FontHelperDialog : DialogWrapper(true) {
     }
 
     private fun makeTypeRow(
-            index: Int
+        index: Int
     ): JPanel {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
@@ -118,16 +121,16 @@ class FontHelperDialog : DialogWrapper(true) {
     }
 
     private fun makeTextFieldWithBrowseButton(
-            type: String,
-            updatePath: (path: String) -> Unit
+        type: String,
+        updatePath: (path: String) -> Unit
     ): TextFieldWithBrowseButton {
         val textField = TextFieldWithBrowseButton()
 
         textField.addBrowseFolderListener(
-                "Select $type font file",
-                "Select $type font file",
-                null,
-                FileChooserDescriptor(true, false, false, false, false, false),
+            "Select $type font file",
+            "Select $type font file",
+            null,
+            FileChooserDescriptor(true, false, false, false, false, false),
         )
         textField.textField.columns = 20
         textField.isEditable = false
@@ -150,6 +153,37 @@ class FontHelperDialog : DialogWrapper(true) {
             }
         }
         textField.textField.document.addDocumentListener(dl)
+
+        // Add file path drag and drop
+        textField.textField.transferHandler = object : TransferHandler() {
+            override fun importData(support: TransferSupport): Boolean {
+                if (!canImport(support)) {
+                    return false
+                }
+
+                val transferable = support.transferable
+                return try {
+                    val files = transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<File>
+                    if (files.size == 1) {
+                        textField.text = files[0].absolutePath
+                        true
+                    } else {
+                        false
+                    }
+                } catch (e: UnsupportedClassVersionError) {
+                    e.printStackTrace()
+                    false
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                    false
+                }
+            }
+
+            override fun canImport(support: TransferSupport): Boolean {
+                return support.isDataFlavorSupported(DataFlavor.javaFileListFlavor)
+            }
+        }
+
         val icon = UIManager.getIcon("FileView.fileIcon")
         textField.setButtonIcon(icon)
         return textField

@@ -58,6 +58,10 @@ object PathUtil {
     }
 
     fun makeSavingFormatFileName() :String {
+        if (fileName.isEmpty()) {
+            return  ""
+        }
+
         val result = if (fileName.length == 1) {
             return  fileName.uppercase()
         } else {
@@ -67,9 +71,9 @@ object PathUtil {
         return "${result}.kt"
     }
 
-    fun getTotalClassPath(): String {
+    fun getSimplePath(): String {
         val st = StringBuilder()
-        st.append(base)
+        st.append(".")
         st.append("/")
         st.append(module)
         st.append("/")
@@ -79,8 +83,7 @@ object PathUtil {
             st.append(packageName.replace(".", "/"))
         }
         st.append("/")
-        st.append(fileName)
-        st.append(".kt")
+        st.append(makeSavingFormatFileName())
         return st.toString()
     }
 

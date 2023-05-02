@@ -1,25 +1,11 @@
 package com.wonddak.fonthelper
 
-import com.intellij.openapi.fileChooser.FileChooserDescriptor
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.model.FontCheck
 import com.wonddak.fonthelper.util.FontUtil
-import com.wonddak.fonthelper.util.GradleUtil
 import com.wonddak.fonthelper.util.PathUtil
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import java.awt.*
-import java.awt.datatransfer.DataFlavor
-import java.io.File
-import java.io.IOException
 import javax.swing.*
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 import kotlin.math.ceil
 
 
@@ -58,12 +44,10 @@ class FontHelperDialog(
 
     init {
         init()
+
         title = "Font Helper"
-        PathUtil.clearAll()
-        PathUtil.base = project.basePath!!
-        //clear fontArray When Open
-        fontArray  = Array(FontUtil.getWeightCount() * 2) { "" }
     }
+
 
     /**
      * make Dialog UI
@@ -72,18 +56,27 @@ class FontHelperDialog(
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
+
         panel.add(
-            JPanelUI.makeInputRow("Input Font Class Name") { text ->
+            JPanelUI.makeInputRow("Font Class Name") { text ->
                 PathUtil.fileName = text
-                println(PathUtil.getClassPath())
-                println(PathUtil.getFontPath())
+                JPanelUI.updateInfo()
             }
         )
 
         panel.add(
             JPanelUI.makeModuleSpinner(project) { text ->
                 PathUtil.setModule(text)
+                JPanelUI.updateInfo()
             }
+        )
+
+        panel.add(
+            Box.createVerticalStrut(5)
+        )
+
+        panel.add(
+            JPanelUI.makeInfoPanel()
         )
 
         panel.add(

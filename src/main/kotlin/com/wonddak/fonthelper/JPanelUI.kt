@@ -8,6 +8,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.FontHelperDialog.Companion.fontArray
 import com.wonddak.fonthelper.FontHelperDialog.Companion.spinnerList
+import com.wonddak.fonthelper.core.Const
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.GradleUtil
 import com.wonddak.fonthelper.util.PathUtil
@@ -30,9 +31,9 @@ object JPanelUI {
         panel.layout = FlowLayout(FlowLayout.LEFT)
         val label = JLabel(title)
         label.horizontalAlignment = SwingConstants.CENTER
-        label.preferredSize = Dimension(250, label.preferredSize.height)
+        label.preferredSize = Dimension(Const.LABEL_WIDTH, label.preferredSize.height)
 
-        val textField = JTextField(20)
+        val textField = JTextField(Const.TEXT_FIELD_COLUMNS)
         val dl: DocumentListener = object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) {
                 updateFieldState()
@@ -73,16 +74,17 @@ object JPanelUI {
         } else {
             throw RuntimeException("Can't not found Android Module..")
         }
-        val label = JLabel("Select Module For Add class File")
+
+        val label = JLabel("Select Module")
         label.horizontalAlignment = SwingConstants.CENTER
-        label.preferredSize = Dimension(250, label.preferredSize.height)
+        label.preferredSize = Dimension(Const.LABEL_WIDTH, label.preferredSize.height)
 
         val spinnerModel = DefaultComboBoxModel(spinnerList.keys.toList().toTypedArray())
         val spinner = ComboBox(spinnerModel)
         spinner.addActionListener {
             spinnerChangeAction(spinner.selectedItem!!.toString())
         }
-        spinner.preferredSize = JTextField(20).preferredSize
+        spinner.preferredSize = JTextField(Const.TEXT_FIELD_COLUMNS).preferredSize
 
 
         val panel = JPanel()
@@ -210,5 +212,27 @@ object JPanelUI {
             panel.add(Box.createVerticalStrut(5)) // add some space between the rows
         }
         return panel
+    }
+
+    private lateinit var classInfoLabel: JLabel
+
+    fun updateInfo() {
+        classInfoLabel.text = PathUtil.getSimplePath()
+    }
+
+    fun makeInfoPanel() : JPanel {
+        val infoPanel = JPanel()
+        infoPanel.layout = FlowLayout(FlowLayout.LEFT)
+        classInfoLabel = JLabel()
+
+        val label = JLabel("Class Path Preview")
+        label.horizontalAlignment = SwingConstants.CENTER
+        label.preferredSize = Dimension(Const.LABEL_WIDTH, label.preferredSize.height)
+        infoPanel.add(label)
+        infoPanel.add(classInfoLabel)
+
+        updateInfo()
+
+        return infoPanel
     }
 }

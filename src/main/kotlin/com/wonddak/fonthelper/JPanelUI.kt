@@ -7,9 +7,9 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.FontHelperDialog.Companion.fontArray
-import com.wonddak.fonthelper.FontHelperDialog.Companion.printInfoOfFontArray
 import com.wonddak.fonthelper.FontHelperDialog.Companion.spinnerList
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.GradleUtil
 import com.wonddak.fonthelper.util.PathUtil
 import java.awt.Dimension
 import java.awt.FlowLayout
@@ -69,7 +69,9 @@ object JPanelUI {
         }
         //set First Value is Default
         if (spinnerList.isNotEmpty()) {
-            PathUtil.module = spinnerList.entries.iterator().next().key
+            PathUtil.setModule(spinnerList.entries.iterator().next().key)
+        } else {
+            throw RuntimeException("Can't not found Android Module..")
         }
         val label = JLabel("Select Module For Add class File")
         label.horizontalAlignment = SwingConstants.CENTER
@@ -181,13 +183,13 @@ object JPanelUI {
 
             val normalTextField = makeTextFieldWithBrowseButton(FontUtil.NORMAL) { path ->
                 fontArray[2 * index + 1] = path
-                printInfoOfFontArray()
+//                printInfoOfFontArray()
             }
             panel.add(normalTextField)
 
             val italicTextField = makeTextFieldWithBrowseButton(FontUtil.ITALIC) { path ->
                 fontArray[2 * index] = path
-                printInfoOfFontArray()
+//                printInfoOfFontArray()
             }
             panel.add(italicTextField)
 

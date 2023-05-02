@@ -9,6 +9,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.model.FontCheck
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.GradleUtil
 import com.wonddak.fonthelper.util.PathUtil
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,19 +79,10 @@ class FontHelperDialog(
                 println(PathUtil.getFontPath())
             }
         )
-        panel.add(
-            JPanelUI.makeInputRow("Input your PackageName") { text ->
-                PathUtil.packageName = text
-                println(PathUtil.getClassPath())
-                println(PathUtil.getFontPath())
-            }
-        )
 
         panel.add(
             JPanelUI.makeModuleSpinner(project) { text ->
-                PathUtil.module = text
-                println(PathUtil.getClassPath())
-                println(PathUtil.getFontPath())
+                PathUtil.setModule(text)
             }
         )
 
@@ -103,10 +95,7 @@ class FontHelperDialog(
 
 
     override fun doOKAction() {
-        if (PathUtil.fileName.length <= 2) {
-            return
-        }
-        if (PathUtil.packageName.isEmpty()) {
+        if (PathUtil.fileName.isEmpty()) {
             return
         }
         if (PathUtil.module.isEmpty()) {

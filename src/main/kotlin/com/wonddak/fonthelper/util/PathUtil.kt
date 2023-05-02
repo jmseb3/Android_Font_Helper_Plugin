@@ -1,7 +1,11 @@
 package com.wonddak.fonthelper.util
 
 import com.intellij.openapi.vfs.VfsUtil
+import com.wonddak.fonthelper.FontHelperDialog
 
+/**
+ * Helper Object For Path
+ */
 object PathUtil {
     private const val FONT_PATH = "src/main/res/font"
     private const val CLASS_PATH = "src/main/java"
@@ -15,6 +19,15 @@ object PathUtil {
 
     // module Name (ex: app)
     var module = ""
+        private set
+
+    //set Module And setPackageName
+    fun setModule(module:String) {
+        this.module = module
+        this.packageName = GradleUtil.getPackageName(FontHelperDialog.spinnerList[module]!!)
+        println(getClassPath())
+        println(getFontPath())
+    }
 
     // packageName
     var packageName = ""
@@ -41,6 +54,33 @@ object PathUtil {
             st.append("/")
             st.append(packageName.replace(".", "/"))
         }
+        return st.toString()
+    }
+
+    fun makeSavingFormatFileName() :String {
+        val result = if (fileName.length == 1) {
+            return  fileName.uppercase()
+        } else {
+            "${fileName[0].uppercase()}${fileName.slice(IntRange(1, fileName.length - 1))}"
+        }
+
+        return "${result}.kt"
+    }
+
+    fun getTotalClassPath(): String {
+        val st = StringBuilder()
+        st.append(base)
+        st.append("/")
+        st.append(module)
+        st.append("/")
+        st.append(CLASS_PATH)
+        if (packageName.isNotEmpty()) {
+            st.append("/")
+            st.append(packageName.replace(".", "/"))
+        }
+        st.append("/")
+        st.append(fileName)
+        st.append(".kt")
         return st.toString()
     }
 

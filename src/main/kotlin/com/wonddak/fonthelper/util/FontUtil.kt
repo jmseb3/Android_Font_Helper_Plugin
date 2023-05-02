@@ -8,6 +8,9 @@ import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontCheck
 import java.io.File
 
+/**
+ * Font Helper Object
+ */
 object FontUtil {
     const val NORMAL = "Normal"
     const val ITALIC = "Italic"
@@ -81,7 +84,7 @@ object FontUtil {
         val project = ProjectManager.getInstance().defaultProject
 
         val directory = VfsUtil.createDirectoryIfMissing(PathUtil.getClassPath())
-        val fileName = "${name[0].uppercase()}${name.slice(IntRange(1, name.length - 1))}.kt"
+        val fileName =  PathUtil.makeSavingFormatFileName()
 
         WriteCommandAction.runWriteCommandAction(project) {
             directory?.let { directory ->

@@ -26,7 +26,8 @@ object JPanelUI {
      *  make Dialog Row (label - textField)
      */
     fun makeInputRow(title: String, updateAction: (text: String) -> Unit): JPanel {
-        val panel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val panel = JPanel()
+        panel.layout = FlowLayout(FlowLayout.LEFT)
         val label = JLabel(title)
         label.horizontalAlignment = SwingConstants.CENTER
         label.preferredSize = Dimension(250, label.preferredSize.height)
@@ -54,7 +55,6 @@ object JPanelUI {
         panel.add(textField)
         return panel
     }
-
 
     fun makeModuleSpinner(project: Project, spinnerChangeAction: (selectedValue: String) -> Unit): JPanel {
         val base = project.basePath
@@ -172,7 +172,7 @@ object JPanelUI {
             index: Int
         ): JPanel {
             val panel = JPanel()
-            panel.layout = BoxLayout(panel, BoxLayout.X_AXIS)
+            panel.layout = FlowLayout(FlowLayout.LEFT)
 
             val labelComponent = JLabel(FontUtil.getWeightTextByIndex(index))
             labelComponent.horizontalAlignment = SwingConstants.CENTER
@@ -197,10 +197,15 @@ object JPanelUI {
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 
+        val xPanel = JPanel()
+        xPanel.layout = FlowLayout(FlowLayout.CENTER)
+        xPanel.add(JLabel("[Left : Normal]  [Right : Italic]"))
+        panel.add(xPanel)
+
         for (i in 0 until FontUtil.getWeightCount()) {
             val row = makeTypeRow(i)
             panel.add(row)
-            panel.add(Box.createVerticalStrut(10)) // add some space between the rows
+            panel.add(Box.createVerticalStrut(5)) // add some space between the rows
         }
         return panel
     }

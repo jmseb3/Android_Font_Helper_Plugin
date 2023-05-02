@@ -94,11 +94,9 @@ class FontHelperDialog(
             }
         )
 
-        panel.add(Box.createVerticalStrut(10)) // add some space between the rows
-        panel.add(JLabel("input Font File(.ttf) [Left : Normal]  [Right : Italic]"))
-        panel.add(Box.createVerticalStrut(10)) // add some space between the rows
-
-        panel.add(JPanelUI.makeFontTable())
+        panel.add(
+            JPanelUI.makeFontTable()
+        )
 
         return panel
     }

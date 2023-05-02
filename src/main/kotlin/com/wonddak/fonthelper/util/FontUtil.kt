@@ -5,16 +5,12 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.impl.file.PsiDirectoryFactory
+import com.wonddak.fonthelper.model.FontCheck
 import java.io.File
 
 object FontUtil {
     const val NORMAL = "Normal"
     const val ITALIC = "Italic"
-
-    data class FontCheck(
-            val isItalic: Boolean,
-            val weightIndex: Int
-    )
 
     private val indexToWeight: Map<Int, String> = mapOf(
             0 to "Thin",
@@ -36,21 +32,18 @@ object FontUtil {
         return indexToWeight.size
     }
 
-    private fun makeFileName(name: String, index: Int, isItalic: Boolean): String {
+
+    private fun makeFileName(name: String, fontCheck: FontCheck): String {
         val st = StringBuilder()
         st.append(name.lowercase())
         st.append("_")
-        st.append(getWeightTextByIndex(index).lowercase())
-        if (isItalic) {
+        st.append(getWeightTextByIndex(fontCheck.weightIndex).lowercase())
+        if (fontCheck.isItalic) {
             st.append("_")
             st.append(ITALIC.lowercase())
         }
         st.append(".ttf")
         return st.toString()
-    }
-
-    private fun makeFileName(name: String, fontCheck: FontCheck): String {
-        return makeFileName(name,fontCheck.weightIndex,fontCheck.isItalic)
     }
 
 
@@ -78,12 +71,13 @@ object FontUtil {
         FileUtil.copy(sourceFile, destinationFile)
     }
 
-    fun copyFontFile(srcPath: String, fileName: String, fontCheck: FontCheck) {
-        copyFontFile(srcPath, makeFileName(fileName, fontCheck))
+    fun copyFontFile(fontCheck: FontCheck) {
+        copyFontFile(fontCheck.path, makeFileName(PathUtil.fileName, fontCheck))
     }
 
 
-    fun makeFontFamily(name: String, fontCheck: List<FontCheck>) {
+    fun makeFontFamily(fontCheck: List<FontCheck>) {
+        val name = PathUtil.fileName
         val project = ProjectManager.getInstance().defaultProject
 
         val directory = VfsUtil.createDirectoryIfMissing(PathUtil.getClassPath())
@@ -101,7 +95,7 @@ object FontUtil {
         PathUtil.refresh()
     }
 
-    fun makeContentString(name: String, fontCheck: List<FontCheck>): String {
+    private fun makeContentString(name: String, fontCheck: List<FontCheck>): String {
         fun makeFontString(index: Int, isItalic: Boolean): String {
             val st = StringBuilder()
             val type = getWeightTextByIndex(index)

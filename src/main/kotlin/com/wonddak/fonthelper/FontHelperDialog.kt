@@ -7,6 +7,7 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
+import com.wonddak.fonthelper.model.FontCheck
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.PathUtil
 import kotlinx.coroutines.flow.Flow
@@ -18,6 +19,7 @@ import java.io.IOException
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import kotlin.math.ceil
 
 
 class FontHelperDialog(
@@ -25,11 +27,28 @@ class FontHelperDialog(
 ) : DialogWrapper(true) {
 
     companion object {
-        // Class Name and Variable Name
-        private var fileName: String = ""
+        /**
+         * font path List
+         * odd - normal || even - italic
+         */
+        var fontArray: Array<String> = Array(FontUtil.getWeightCount() * 2) { "" }
 
-        val normalArray: Array<String> = Array(FontUtil.getWeightCount()) { "" }
-        val italicArray: Array<String> = Array(FontUtil.getWeightCount()) { "" }
+        fun printInfoOfFontArray() {
+            println("-".repeat(30))
+            fontArray.forEachIndexed { index, s ->
+                val st = StringBuilder()
+                if (index % 2 == 0) {
+                    st.append("italic")
+                } else {
+                    st.append("normal")
+                }
+                st.append("(")
+                st.append(index)
+                st.append(") ")
+                st.append(s)
+                println(st.toString())
+            }
+        }
 
         //Spinner List (key : name ,value : real path)
         val spinnerList: MutableMap<String, String> = mutableMapOf()
@@ -39,7 +58,10 @@ class FontHelperDialog(
     init {
         init()
         title = "Font Helper"
+        PathUtil.clearAll()
         PathUtil.base = project.basePath!!
+        //clear fontArray When Open
+        fontArray  = Array(FontUtil.getWeightCount() * 2) { "" }
     }
 
     /**
@@ -51,23 +73,30 @@ class FontHelperDialog(
 
         panel.add(
             JPanelUI.makeInputRow("Input Font Class Name") { text ->
-                fileName = text
+                PathUtil.fileName = text
+                println(PathUtil.getClassPath())
+                println(PathUtil.getFontPath())
             }
         )
         panel.add(
             JPanelUI.makeInputRow("Input your PackageName") { text ->
                 PathUtil.packageName = text
+                println(PathUtil.getClassPath())
+                println(PathUtil.getFontPath())
             }
         )
 
         panel.add(
             JPanelUI.makeModuleSpinner(project) { text ->
                 PathUtil.module = text
+                println(PathUtil.getClassPath())
+                println(PathUtil.getFontPath())
             }
         )
 
         panel.add(Box.createVerticalStrut(10)) // add some space between the rows
         panel.add(JLabel("input Font File(.ttf) [Left : Normal]  [Right : Italic]"))
+        panel.add(Box.createVerticalStrut(10)) // add some space between the rows
 
         panel.add(JPanelUI.makeFontTable())
 
@@ -76,11 +105,7 @@ class FontHelperDialog(
 
 
     override fun doOKAction() {
-        val fontCheckList = mutableListOf<FontUtil.FontCheck>()
-
-        println(PathUtil.getFontPath())
-        println(PathUtil.getClassPath())
-        if (fileName.length <= 2) {
+        if (PathUtil.fileName.length <= 2) {
             return
         }
         if (PathUtil.packageName.isEmpty()) {
@@ -90,23 +115,23 @@ class FontHelperDialog(
             return
         }
 
-        normalArray.forEachIndexed { index, path ->
+        val fontCheckList: MutableList<FontCheck> = mutableListOf()
+
+        fontArray.forEachIndexed { index, path ->
             if (path.isNotEmpty()) {
-                val fontCheck = FontUtil.FontCheck(false, index)
-                FontUtil.copyFontFile(path, fileName, fontCheck)
-                fontCheckList.add(fontCheck)
+                fontCheckList.add(
+                    FontCheck(
+                        (index % 2 == 0),
+                        ceil(index.toFloat() / 2).toInt(),
+                        path
+                    )
+                )
             }
         }
 
-        italicArray.forEachIndexed { index, path ->
-            if (path.isNotEmpty()) {
-                val fontCheck = FontUtil.FontCheck(true, index)
-                FontUtil.copyFontFile(path, fileName, fontCheck)
-                fontCheckList.add(fontCheck)
-            }
-        }
+        fontCheckList.map { fontCheck -> FontUtil.copyFontFile(fontCheck) }
 
-        FontUtil.makeFontFamily(fileName, fontCheckList)
+        FontUtil.makeFontFamily(fontCheckList)
 
         super.doOKAction()
 

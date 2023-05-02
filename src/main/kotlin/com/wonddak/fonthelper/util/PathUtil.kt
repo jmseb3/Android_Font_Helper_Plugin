@@ -6,16 +6,32 @@ object PathUtil {
     private const val FONT_PATH = "src/main/res/font"
     private const val CLASS_PATH = "src/main/java"
 
-    var base= ""
+
+    // Class Name and Variable Name
+    var fileName: String = ""
+
+    // basePath
+    var base = ""
+
+    // module Name (ex: app)
     var module = ""
+
+    // packageName
     var packageName = ""
 
-    fun getFontPath():String {
+
+    fun clearAll() {
+        fileName = ""
+        base = ""
+        module = ""
+        packageName = ""
+    }
+    fun getFontPath(): String {
         return "$base/$module/$FONT_PATH"
     }
 
-    fun getClassPath():String {
-        val st =StringBuilder()
+    fun getClassPath(): String {
+        val st = StringBuilder()
         st.append(base)
         st.append("/")
         st.append(module)
@@ -23,7 +39,7 @@ object PathUtil {
         st.append(CLASS_PATH)
         if (packageName.isNotEmpty()) {
             st.append("/")
-            st.append(packageName.replace(".","/"))
+            st.append(packageName.replace(".", "/"))
         }
         return st.toString()
     }

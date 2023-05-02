@@ -6,8 +6,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import com.wonddak.fonthelper.FontHelperDialog.Companion.italicArray
-import com.wonddak.fonthelper.FontHelperDialog.Companion.normalArray
+import com.wonddak.fonthelper.FontHelperDialog.Companion.fontArray
+import com.wonddak.fonthelper.FontHelperDialog.Companion.printInfoOfFontArray
 import com.wonddak.fonthelper.FontHelperDialog.Companion.spinnerList
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.PathUtil
@@ -56,8 +56,7 @@ object JPanelUI {
     }
 
 
-
-    fun makeModuleSpinner(project: Project, spinnerChangeAction:(selectedValue:String)->Unit): JPanel {
+    fun makeModuleSpinner(project: Project, spinnerChangeAction: (selectedValue: String) -> Unit): JPanel {
         val base = project.basePath
         val moduleManager = ModuleManager.getInstance(project)
         for (module in moduleManager.modules) {
@@ -68,6 +67,7 @@ object JPanelUI {
                 }
             }
         }
+        //set First Value is Default
         if (spinnerList.isNotEmpty()) {
             PathUtil.module = spinnerList.entries.iterator().next().key
         }
@@ -90,7 +90,6 @@ object JPanelUI {
         panel.add(spinner)
         return panel
     }
-
 
 
     /**
@@ -181,12 +180,14 @@ object JPanelUI {
             panel.add(labelComponent)
 
             val normalTextField = makeTextFieldWithBrowseButton(FontUtil.NORMAL) { path ->
-                normalArray[index] = path
+                fontArray[2 * index + 1] = path
+                printInfoOfFontArray()
             }
             panel.add(normalTextField)
 
             val italicTextField = makeTextFieldWithBrowseButton(FontUtil.ITALIC) { path ->
-                italicArray[index] = path
+                fontArray[2 * index] = path
+                printInfoOfFontArray()
             }
             panel.add(italicTextField)
 

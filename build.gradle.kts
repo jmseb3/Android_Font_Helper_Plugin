@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.wonddak"
-version = "1.1.2"
+version = "1.2.0"
 
 repositories {
   mavenCentral()

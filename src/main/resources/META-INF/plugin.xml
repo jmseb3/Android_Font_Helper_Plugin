@@ -1,5 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
-<idea-plugin>
+<idea-plugin
+        url="https://github.com/jmseb3/Android_Font_Helper_Plugin">
     <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
     <id>com.wonddak.fontHelper</id>
 
@@ -24,6 +25,9 @@
       </ul>
     ]]>>
     </description>
+    <change-notes>
+        Support CMP Project
+    </change-notes>
 
   <!-- Product and plugin compatibility requirements.
        Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->

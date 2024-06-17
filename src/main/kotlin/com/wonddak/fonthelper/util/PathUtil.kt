@@ -2,13 +2,17 @@ package com.wonddak.fonthelper.util
 
 import com.intellij.openapi.vfs.VfsUtil
 import com.wonddak.fonthelper.FontHelperDialog
+import com.wonddak.fonthelper.FontHelperDialog.Companion.isCMPProject
 
 /**
  * Helper Object For Path
  */
 object PathUtil {
     private const val FONT_PATH = "src/main/res/font"
+    private const val FONT_PATH_CMP = "src/commonMain/composeResources/font"
     private const val CLASS_PATH = "src/main/java"
+    private const val CLASS_PATH_CMP = "src/commonMain/kotlin"
+
 
 
     // Class Name and Variable Name
@@ -40,6 +44,9 @@ object PathUtil {
         packageName = ""
     }
     fun getFontPath(): String {
+        if (isCMPProject) {
+            return "$base/$module/$FONT_PATH_CMP"
+        }
         return "$base/$module/$FONT_PATH"
     }
 
@@ -49,7 +56,11 @@ object PathUtil {
         st.append("/")
         st.append(module)
         st.append("/")
-        st.append(CLASS_PATH)
+        if(isCMPProject) {
+            st.append(CLASS_PATH_CMP)
+        } else {
+            st.append(CLASS_PATH)
+        }
         if (packageName.isNotEmpty()) {
             st.append("/")
             st.append(packageName.replace(".", "/"))
@@ -77,7 +88,11 @@ object PathUtil {
         st.append("/")
         st.append(module)
         st.append("/")
-        st.append(CLASS_PATH)
+        if(isCMPProject) {
+            st.append(CLASS_PATH_CMP)
+        } else {
+            st.append(CLASS_PATH)
+        }
         if (packageName.isNotEmpty()) {
             st.append("/")
             st.append(packageName.replace(".", "/"))

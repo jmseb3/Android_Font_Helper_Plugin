@@ -6,7 +6,6 @@ import com.wonddak.fonthelper.model.FontCheck
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.PathUtil
 import javax.swing.*
-import kotlin.math.ceil
 
 
 class FontHelperDialog(
@@ -30,7 +29,7 @@ class FontHelperDialog(
                     st.append("normal")
                 }
                 st.append("(")
-                st.append(index)
+                st.append(FontUtil.getWeightTextByIndex(index / 2))
                 st.append(") ")
                 st.append(s)
                 println(st.toString())
@@ -39,12 +38,13 @@ class FontHelperDialog(
 
         //Spinner List (key : name ,value : real path)
         val spinnerList: MutableMap<String, String> = mutableMapOf()
+
+        var isCMPProject:Boolean = false
     }
 
 
     init {
         init()
-
         title = "Font Helper"
     }
 
@@ -102,7 +102,7 @@ class FontHelperDialog(
                 fontCheckList.add(
                     FontCheck(
                         (index % 2 == 0),
-                        ceil(index.toFloat() / 2).toInt(),
+                         index/ 2,
                         path
                     )
                 )
@@ -111,7 +111,7 @@ class FontHelperDialog(
 
         fontCheckList.map { fontCheck -> FontUtil.copyFontFile(fontCheck) }
 
-        FontUtil.makeFontFamily(fontCheckList)
+        FontUtil.makeFontFamilyAndroidProject(fontCheckList)
 
         super.doOKAction()
 

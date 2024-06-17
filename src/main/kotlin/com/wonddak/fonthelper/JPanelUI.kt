@@ -7,19 +7,21 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.wonddak.fonthelper.FontHelperDialog.Companion.fontArray
+import com.wonddak.fonthelper.FontHelperDialog.Companion.isCMPProject
 import com.wonddak.fonthelper.FontHelperDialog.Companion.spinnerList
 import com.wonddak.fonthelper.core.Const
 import com.wonddak.fonthelper.util.FontUtil
-import com.wonddak.fonthelper.util.GradleUtil
 import com.wonddak.fonthelper.util.PathUtil
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.datatransfer.DataFlavor
+import java.awt.event.ItemEvent
 import java.io.File
 import java.io.IOException
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+
 
 object JPanelUI {
 
@@ -57,7 +59,10 @@ object JPanelUI {
         return panel
     }
 
-    fun makeModuleSpinner(project: Project, spinnerChangeAction: (selectedValue: String) -> Unit): JPanel {
+    fun makeModuleSpinner(
+        project: Project,
+        spinnerChangeAction: (selectedValue: String) -> Unit
+    ): JPanel {
         val base = project.basePath
         val moduleManager = ModuleManager.getInstance(project)
         for (module in moduleManager.modules) {
@@ -92,6 +97,18 @@ object JPanelUI {
 
         panel.add(label)
         panel.add(spinner)
+
+        val checkBox1 = JCheckBox("IS CMP Project(experimental)")
+        checkBox1.addItemListener { e ->
+            isCMPProject = (e.stateChange == ItemEvent.SELECTED)
+            updateInfo()
+            if (e.stateChange == ItemEvent.SELECTED) {
+                println("Option 1 selected")
+            } else {
+                println("Option 1 deselected")
+            }
+        }
+        panel.add(checkBox1)
         return panel
     }
 

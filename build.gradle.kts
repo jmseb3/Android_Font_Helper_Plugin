@@ -1,11 +1,11 @@
 plugins {
   id("java")
-  id("org.jetbrains.kotlin.jvm") version "1.9.21"
+  id("org.jetbrains.kotlin.jvm") version "2.0.0"
   id("org.jetbrains.intellij") version "1.17.2"
 }
 
 group = "com.wonddak"
-version = "1.2.0"
+version = "1.2.1"
 
 repositories {
   mavenCentral()
@@ -18,7 +18,7 @@ intellij {
   version.set("2023.1.5")
   type.set("IC") // Target IDE Platform
 
-  plugins.set(listOf("android"))
+  plugins.set(listOf("org.jetbrains.android"))
 }
 
 tasks {

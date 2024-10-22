@@ -13,7 +13,7 @@ repositories {
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-// And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2023
+// And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2024
 intellij {
   version.set("2023.1.5")
   type.set("IC") // Target IDE Platform
@@ -33,7 +33,7 @@ tasks {
 
   patchPluginXml {
     sinceBuild.set("223")
-    untilBuild.set("241.*")
+    untilBuild.set("242.*")
   }
 
   signPlugin {

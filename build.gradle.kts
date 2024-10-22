@@ -35,7 +35,7 @@ intellijPlatform {
     pluginConfiguration {
         name = "FontHelper"
         ideaVersion.sinceBuild.set("223")
-        ideaVersion.untilBuild.set("242.*")
+        ideaVersion.untilBuild.set("242.21829.*")
     }
 
     signing {

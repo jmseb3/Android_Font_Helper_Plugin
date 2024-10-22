@@ -141,7 +141,7 @@ object FontUtil {
             st.appendLine("import androidx.compose.ui.text.font.FontStyle")
             st.appendLine("import androidx.compose.ui.text.font.FontWeight")
             st.appendLine()
-            st.appendLine("val $lowerName} = FontFamily(")
+            st.appendLine("val $lowerName = FontFamily(")
             st.append(fontCheck.joinToString(",\n") { makeFontString(name, it.weightIndex, it.isItalic) })
             st.appendLine("")
             st.append(")")

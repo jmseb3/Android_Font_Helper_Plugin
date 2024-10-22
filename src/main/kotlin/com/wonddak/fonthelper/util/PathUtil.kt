@@ -74,7 +74,7 @@ object PathUtil {
         }
 
         val result = if (fileName.length == 1) {
-            return  fileName.uppercase()
+            fileName.uppercase()
         } else {
             "${fileName[0].uppercase()}${fileName.slice(IntRange(1, fileName.length - 1))}"
         }

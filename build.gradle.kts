@@ -1,56 +1,51 @@
 plugins {
-  id("java")
-  id("org.jetbrains.kotlin.jvm") version "2.0.0"
-  id("org.jetbrains.intellij") version "1.17.2"
+    id("java")
+    id("org.jetbrains.kotlin.jvm") version "2.0.0"
+    id("org.jetbrains.intellij.platform") version "2.1.0"
 }
 
 group = "com.wonddak"
-version = "1.2.1"
+version = "1.3.0"
 
 repositories {
-  mavenCentral()
+    mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
+}
+dependencies {
+    intellijPlatform {
+        instrumentationTools()
+//        local("/Applications/Android Studio.app")
+        androidStudio("2024.1.3.1")
+        bundledPlugin("org.jetbrains.android")
+
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 // And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2024
-intellij {
-  version.set("2023.1.5")
-  type.set("IC") // Target IDE Platform
+intellijPlatform {
+    pluginConfiguration {
+        name = "FontHelper"
+        ideaVersion.sinceBuild.set("223")
+        ideaVersion.untilBuild.set("242.*")
+    }
 
-  plugins.set(listOf("org.jetbrains.android"))
-}
+    signing {
+        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
+        privateKey.set(System.getenv("PRIVATE_KEY"))
+        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
+    }
 
-tasks {
-  // Set the JVM compatibility versions
-  withType<JavaCompile> {
-    sourceCompatibility = "11"
-    targetCompatibility = "11"
-  }
-  withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
-  }
-
-  patchPluginXml {
-    sinceBuild.set("223")
-    untilBuild.set("242.*")
-  }
-
-  signPlugin {
-    certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-    privateKey.set(System.getenv("PRIVATE_KEY"))
-    password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-  }
-
-  publishPlugin {
-    token.set(System.getenv("PUBLISH_TOKEN"))
-  }
-}
-
-tasks {
-  runIde {
-    // Absolute path to installed target 3.5 Android Studio to use as
-    // IDE Development Instance (the "Contents" directory is macOS specific):
-    ideDir.set(file("/Applications/Android Studio.app/Contents"))
-  }
+    publishing {
+        token.set(System.getenv("PUBLISH_TOKEN"))
+    }
+    instrumentCode = true
 }

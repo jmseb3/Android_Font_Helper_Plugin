@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.wonddak"
-version = "1.3.1"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -18,8 +18,11 @@ dependencies {
         instrumentationTools()
 //        local("/Applications/Android Studio.app")
         androidStudio("2024.1.3.1")
-        bundledPlugin("org.jetbrains.android")
-
+        //Targeting 2023.3+
+        //Note that Android plugin is no longer bundled with the IDE.
+        //
+        //Use plugin("org.jetbrains.android:$VERSION$") instead of bundledPlugin(...).
+        plugin("org.jetbrains.android:242.23339.11")
     }
 }
 
@@ -35,7 +38,6 @@ intellijPlatform {
     pluginConfiguration {
         name = "FontHelper"
         ideaVersion.sinceBuild.set("223")
-//        ideaVersion.untilBuild.set("242.21829.*")
         ideaVersion.untilBuild.set(provider { null })
     }
 

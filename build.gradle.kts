@@ -1,21 +1,25 @@
 plugins {
-    id("java")
-    id("org.jetbrains.kotlin.jvm") version "2.0.0"
-    id("org.jetbrains.intellij.platform") version "2.1.0"
+    alias(libs.plugins.intellij.platform)
+    java
+    alias(libs.plugins.jvm)
+    alias(libs.plugins.compose.plugin)
+    alias(libs.plugins.compose)
 }
 
 group = "com.wonddak"
-version = "1.3.0"
+version = "2.0.0"
 
 repositories {
     mavenCentral()
+    google()
     intellijPlatform {
         defaultRepositories()
     }
+    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
 }
 dependencies {
+    implementation(compose.desktop.currentOs)
     intellijPlatform {
-        instrumentationTools()
 //        local("/Applications/Android Studio.app")
         androidStudio("2024.1.3.1")
         //Targeting 2023.3+

@@ -1,10 +1,17 @@
 package com.wonddak.fonthelper
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Surface
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.awt.ComposePanel
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.wonddak.fonthelper.model.FontCheck
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.PathUtil
+import org.jetbrains.jewel.ui.component.Text
 import javax.swing.*
 
 
@@ -53,6 +60,18 @@ class FontHelperDialog(
      * make Dialog UI
      */
     override fun createCenterPanel(): JComponent {
+        return ComposePanel().apply {
+            setBounds(0, 0, 800, 600)
+            setContent {
+                MaterialTheme {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Column {
+                            Text("123")
+                        }
+                    }
+                }
+            }
+        }
         val panel = JPanel()
         panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
 

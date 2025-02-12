@@ -43,6 +43,7 @@ object PathUtil {
         module = ""
         packageName = ""
     }
+
     fun getFontPath(): String {
         if (isCMPProject) {
             return "$base/$module/$FONT_PATH_CMP"

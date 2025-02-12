@@ -42,7 +42,7 @@
 <!--    </extensions>-->
     <actions>
         <action
-                id="Open"
+                id="com.wonddak.fonthelper.FontHelper"
                 class="com.wonddak.fonthelper.FontHelper"
                 text="Font Helper"
                 description="Open Font Helper Dialog"

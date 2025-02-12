@@ -12,6 +12,7 @@ class FontHelper : AnAction() {
             PathUtil.base = project.basePath!!
             //clear fontArray When Open
             FontHelperDialog.fontArray = Array(FontUtil.getWeightCount() * 2) { "" }
+            FontHelperDialog(project).show()
         }
     }
 }

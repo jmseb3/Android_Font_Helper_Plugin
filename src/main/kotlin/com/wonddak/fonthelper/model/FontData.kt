@@ -1,5 +1,14 @@
 package com.wonddak.fonthelper.model
 
+/**
+ * FontSaveData
+ * @param[fileName] saveFileName if roboto then Roboto.kt
+ * @param[selectedModule] selectModule in proejct
+ * @param[packageName] packageName in project
+ * @param[useKotlinPath] use "kotlin" path instead "java" this is work only android project
+ * @param[normalFontPath] normal font List
+ * @param[italicFontPath] italic font List
+ */
 data class FontData(
     val fileName: String = "",
     val selectedModule: ModuleData? = null,
@@ -8,9 +17,15 @@ data class FontData(
     var normalFontPath: List<FontType.Normal?> = List(9) { null },
     var italicFontPath: List<FontType.Italic?> = List(9) { null },
 ) {
+    /**
+     * safe file name trim
+     */
     private val safeFileName: String
         get() = fileName.trim()
 
+    /**
+     * saving class file formant
+     */
     val savingClassFileName: String
         get() = if (safeFileName.isEmpty()) {
             ""
@@ -23,6 +38,9 @@ data class FontData(
             "${result}.kt"
         }
 
+    /**
+     * make save class File Path with packageName
+     */
     fun getSaveClassPath(): String {
         val st = StringBuilder()
         if (selectedModule != null) {
@@ -35,18 +53,29 @@ data class FontData(
         return st.toString()
     }
 
+    /**
+     * make save class File Path Preview
+     */
     fun previewClassPath(): String {
         return getSaveClassPath() + savingClassFileName
     }
 
-
+    /**
+     * save Font Path
+     */
     val saveFontPath: String
         get() = (selectedModule?.getFontFilePath() ?: "")
 
+    /**
+     * get Total FontType List not null
+     */
     val totalFontPath: List<FontType>
         get() = normalFontPath.filterNotNull() + italicFontPath.filterNotNull()
 
 
+    /**
+     * update Normal Font List
+     */
     fun updateNormalFont(
         index: Int,
         path: String
@@ -56,6 +85,9 @@ data class FontData(
         return this.copy(normalFontPath = temp)
     }
 
+    /**
+     * update Italic Font List
+     */
     fun updateItalicFont(
         index: Int,
         path: String
@@ -63,5 +95,20 @@ data class FontData(
         val temp = italicFontPath.toMutableList()
         temp[index] = FontType.Italic(path, index)
         return this.copy(italicFontPath = temp)
+    }
+
+    fun enabledOk() :Boolean {
+        if (fileName.isEmpty()) {
+            return false
+        }
+
+        if (selectedModule == null) {
+            return false
+        }
+
+        if (totalFontPath.isEmpty()) {
+            return false
+        }
+        return true
     }
 }

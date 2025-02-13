@@ -2,7 +2,6 @@ package com.wonddak.fonthelper.util
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
-import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.VfsUtil
@@ -72,9 +71,9 @@ object FontUtil {
                 val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory!!)
                 println("JJ3 $psiDirectory")
                 var psiFile = psiDirectory.findFile(classFileName)
-                println("JJ3 $psiFile")
+                println("JJ4 $psiFile")
                 psiFile?.delete().also {
-                    println("JJ3 delete $it")
+                    println("JJ4 delete $it")
                 }
                 psiFile = psiDirectory.createFile(classFileName)
                 println("JJ5 $psiFile")
@@ -96,34 +95,21 @@ object FontUtil {
         fontData.selectedModule?.let { module ->
             val isCMPProject = module.isCMP
             if (isCMPProject) {
-//                st.appendLine("import androidx.compose.runtime.Composable")
-//                st.appendLine("import androidx.compose.ui.text.font.FontFamily")
-//                st.appendLine("import androidx.compose.ui.text.font.FontStyle")
-//                st.appendLine("import androidx.compose.ui.text.font.FontWeight")
-//                st.appendLine("import multiplatform_app.composeapp.generated.resources.Res")
-//                fontData.normalFontPath.forEachIndexed() { index,normalPath ->
-//                    if (normalPath.isNotEmpty()) {
-//                        val fileName = makeFileName(fontData.fileName, false, index)
-//                        val fontName = fileName + "_" + getWeightTextByIndex(index).lowercase()
-//                        st.appendLine("import multiplatform_app.composeapp.generated.resources.${fontName}")
-//                    }
-//                }
-//                fontData.italicFontPath.forEachIndexed() { index,italicPath ->
-//                    if (italicPath.isNotEmpty()) {
-//                        val fileName = makeFileName(fontData.fileName, true, index)
-//                        val fontName = fileName + "_" + getWeightTextByIndex(index).lowercase() + "_italic"
-//                        st.appendLine("import multiplatform_app.composeapp.generated.resources.${fontName}")
-//                    }
-//                }
-//                st.appendLine("import org.jetbrains.compose.resources.Font")
-//                st.appendLine()
-//                st.appendLine("@Composable")
-//                st.appendLine("fun get${lowerName.capitalize()}Font(): FontFamily {")
-//                st.appendLine("\treturn FontFamily(")
-//                st.append(fontCheck.joinToString(",\n") { makeFontString(name, it.weightIndex, it.isItalic) })
-//                st.appendLine()
-//                st.appendLine("\t)")
-//                st.appendLine("}")
+                st.appendLine("import androidx.compose.runtime.Composable")
+                st.appendLine("import androidx.compose.ui.text.font.FontFamily")
+                st.appendLine("import androidx.compose.ui.text.font.FontStyle")
+                st.appendLine("import androidx.compose.ui.text.font.FontWeight")
+
+                st.appendLine("import ${module.lastModuleName}.composeapp.generated.resources.Res")
+                fontData.totalFontPath.forEach { font ->
+                    val fontName = font.makeFontFileName(lowerName, false)
+                    st.appendLine("import ${module.lastModuleName}.composeapp.generated.resources.${fontName}")
+                }
+                st.appendLine("import org.jetbrains.compose.resources.Font")
+                st.appendLine()
+                st.appendLine("@Composable")
+                st.appendLine("fun get${lowerName.capitalize()}Font(): FontFamily {")
+                st.appendLine("\treturn FontFamily(")
             } else {
                 st.appendLine("import androidx.compose.ui.text.font.Font")
                 st.appendLine("import androidx.compose.ui.text.font.FontFamily")
@@ -131,49 +117,57 @@ object FontUtil {
                 st.appendLine("import androidx.compose.ui.text.font.FontWeight")
                 st.appendLine()
                 st.appendLine("val $lowerName = FontFamily(")
+            }
 
-                fontData.totalFontPath.joinToString(",\n") { font ->
-                    copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(fontData.fileName))
-                    makeFontString(false, fontData.fileName, font)
-                }.also {
-                    st.append(it)
-                }
-                st.appendLine("")
+            fontData.totalFontPath.forEach { font ->
+                copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
+                st.appendLine(makeFontString(isCMPProject, lowerName, font))
+            }
+
+            if (isCMPProject) {
+                st.appendLine("\t)")
+                st.appendLine("}")
+            } else {
+                st.appendLine()
                 st.append(")")
             }
         }
 
         return st.toString().trimIndent()
+            .also {
+                println(it)
+            }
     }
 
-    private fun makeFontString(isCMPProject :Boolean, name: String, fontType: FontType): String {
+    private fun makeFontString(isCMPProject: Boolean, name: String, fontType: FontType): String {
         val st = StringBuilder()
         val type = getWeightTextByIndex(fontType.weight)
         val fontFile = "${name.lowercase()}_${type.lowercase()}"
+        val isItalic = fontType is FontType.Italic
 
         if (isCMPProject) {
-//            st.append("\t\tFont(")
-//            st.append("resource = Res.font.${fontFile}")
-//            if (isItalic) {
-//                st.append("_italic")
-//            }
-//            st.append(", ")
-//            st.append("weight = FontWeight.${type}, ")
-//            st.append("style = FontStyle.")
+            st.append("\t\tFont(")
+            st.append("resource = Res.font.${fontFile}")
+            if (isItalic) {
+                st.append("_italic")
+            }
+            st.append(", ")
+            st.append("weight = FontWeight.${type}, ")
+            st.append("style = FontStyle.")
         } else {
             st.append("\tFont(")
             st.append("R.font.${fontFile}")
-            if (fontType is FontType.Italic) {
+            if (isItalic) {
                 st.append("_italic")
             }
             st.append(", FontWeight.${type}, FontStyle.")
         }
-        if (fontType is FontType.Italic) {
+        if (isItalic) {
             st.append("Italic")
         } else {
             st.append("Normal")
         }
-        st.append(")")
+        st.append("),")
         return st.toString()
     }
 

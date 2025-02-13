@@ -29,7 +29,7 @@ class FontHelperDialog(
 
     private var moduleList: List<ModuleData> = emptyList()
 
-    private var fontDataResult : FontData? = null
+    private var fontDataResult: FontData? = null
 
     init {
         title = "Font Helper"
@@ -53,14 +53,17 @@ class FontHelperDialog(
                 WidgetTheme(darkTheme = true) {
                     Surface() {
                         var fontData by rememberSaveable {
-                            mutableStateOf(FontData(
-                                fileName = "Roboto",
-                                packageName = "com.example.myapplication",
-                                useKotlinPath = false
-                            ))
+                            mutableStateOf(
+                                FontData(
+                                    fileName = "Roboto",
+                                    packageName = "dev.wonddak.capturableExample",
+                                    useKotlinPath = false
+                                )
+                            )
                         }
                         LaunchedEffect(fontData) {
                             fontDataResult = fontData
+                            isOKActionEnabled = fontData.enabledOk()
                         }
                         Column(
                             modifier = Modifier
@@ -109,7 +112,7 @@ class FontHelperDialog(
                                     }
                                 }
                                 LabelContent("Class Path Preview") {
-                                    Text(fontData.previewClassPath().replace(project.basePath!!,""))
+                                    Text(fontData.previewClassPath().replace(project.basePath!!, "."))
                                 }
                                 FontTable(
                                     normalFontList = fontData.normalFontPath,
@@ -117,7 +120,7 @@ class FontHelperDialog(
                                     updateNormalFontList = { index, path ->
                                         fontData = fontData.updateNormalFont(index, path)
                                     },
-                                    updateItalicFontList = {index, path ->
+                                    updateItalicFontList = { index, path ->
                                         fontData = fontData.updateItalicFont(index, path)
                                     }
                                 )
@@ -134,19 +137,7 @@ class FontHelperDialog(
 
     override fun doOKAction() {
         fontDataResult?.let { fontData ->
-            if (fontData.fileName.isEmpty()) {
-                return
-            }
-
-            if (fontData.selectedModule == null) {
-                return
-            }
-
-            if (fontData.normalFontPath.filterNotNull().isEmpty() && fontData.italicFontPath.filterNotNull().isEmpty()) {
-                return
-            }
-
-            FontUtil.makeFontFamilyFile(project,fontData)
+            FontUtil.makeFontFamilyFile(project, fontData)
             super.doOKAction()
         }
     }

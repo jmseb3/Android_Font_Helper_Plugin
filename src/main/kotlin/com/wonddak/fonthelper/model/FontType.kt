@@ -18,7 +18,8 @@ sealed class FontType(
     ) : FontType(path, weight)
 
     fun makeFontFileName(
-        baseName: String
+        baseName: String,
+        useExtension : Boolean = true
     ): String {
         val st = StringBuilder(baseName.lowercase())
         st.append("_")
@@ -26,7 +27,10 @@ sealed class FontType(
         if (this is Italic) {
             st.append("_italic")
         }
-        st.append(".ttf")
+        if (useExtension) {
+            st.append(".")
+            st.append(path.split(".").last())
+        }
         return st.toString()
     }
 }

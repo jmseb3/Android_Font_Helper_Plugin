@@ -3,7 +3,7 @@ package com.wonddak.fonthelper.widget
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.runtime.Composable
 import androidx.compose.material.TextField
-import org.jetbrains.jewel.ui.component.Text
+import androidx.compose.material.Text
 
 @Composable
 fun InputRow(

@@ -1,58 +1,43 @@
 package com.wonddak.fonthelper
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.Checkbox
+import androidx.compose.material.Text
 import androidx.compose.material.Surface
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.ComposePanel
+import androidx.compose.ui.unit.dp
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
-import com.wonddak.fonthelper.model.FontCheck
+import com.wonddak.fonthelper.model.FontData
+import com.wonddak.fonthelper.model.ModuleData
+import com.wonddak.fonthelper.theme.WidgetTheme
 import com.wonddak.fonthelper.util.FontUtil
-import com.wonddak.fonthelper.util.PathUtil
-import org.jetbrains.jewel.ui.component.Text
+import com.wonddak.fonthelper.util.ModuleFinder
+import com.wonddak.fonthelper.widget.FontTable
+import com.wonddak.fonthelper.widget.InputRow
+import com.wonddak.fonthelper.widget.LabelContent
+import com.wonddak.fonthelper.widget.ModuleSpinner
 import javax.swing.*
 
 
 class FontHelperDialog(
     private val project: Project
-) : DialogWrapper(true) {
+) : DialogWrapper(project) {
 
-    companion object {
-        /**
-         * font path List
-         * odd - normal || even - italic
-         */
-        var fontArray: Array<String> = Array(FontUtil.getWeightCount() * 2) { "" }
+    private var moduleList: List<ModuleData> = emptyList()
 
-        fun printInfoOfFontArray() {
-            println("-".repeat(30))
-            fontArray.forEachIndexed { index, s ->
-                val st = StringBuilder()
-                if (index % 2 == 0) {
-                    st.append("italic")
-                } else {
-                    st.append("normal")
-                }
-                st.append("(")
-                st.append(FontUtil.getWeightTextByIndex(index / 2))
-                st.append(") ")
-                st.append(s)
-                println(st.toString())
-            }
-        }
-
-        //Spinner List (key : name ,value : real path)
-        val spinnerList: MutableMap<String, String> = mutableMapOf()
-
-        var isCMPProject:Boolean = false
-    }
-
+    private var fontDataResult : FontData? = null
 
     init {
-        init()
         title = "Font Helper"
+        moduleList = ModuleFinder.findModule(project)
+        moduleList.forEach {
+            println("[KK] $it")
+        }
+        init()
     }
 
 
@@ -60,80 +45,110 @@ class FontHelperDialog(
      * make Dialog UI
      */
     override fun createCenterPanel(): JComponent {
+        val width = 800
+        val height = 1100
         return ComposePanel().apply {
-            setBounds(0, 0, 800, 600)
+            setBounds(0, 0, width, height)
             setContent {
-                MaterialTheme {
-                    Surface(modifier = Modifier.fillMaxSize()) {
-                        Column {
-                            Text("123")
+                WidgetTheme(darkTheme = true) {
+                    Surface() {
+                        var fontData by rememberSaveable {
+                            mutableStateOf(FontData(
+                                fileName = "Roboto",
+                                packageName = "com.example.myapplication",
+                                useKotlinPath = false
+                            ))
+                        }
+                        LaunchedEffect(fontData) {
+                            fontDataResult = fontData
+                        }
+                        Column(
+                            modifier = Modifier
+                                .width(width.dp)
+                                .height(height.dp)
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(15.dp)
+                        ) {
+                            Text(fontData.toString())
+                            InputRow(
+                                "Font Class Name",
+                                fontData.fileName,
+                                onValueChange = {
+                                    fontData = fontData.copy(fileName = it)
+                                }
+                            )
+                            InputRow(
+                                "Package Name",
+                                fontData.packageName,
+                                onValueChange = {
+                                    fontData = fontData.copy(packageName = it)
+                                }
+                            )
+                            if (moduleList.isNotEmpty()) {
+                                LaunchedEffect(true) {
+                                    fontData = fontData.copy(selectedModule = moduleList.first())
+                                }
+                                ModuleSpinner(
+                                    moduleList,
+                                    selectedModule = fontData.selectedModule,
+                                    updateModule = { module ->
+                                        fontData = fontData.copy(selectedModule = module)
+                                    }
+                                )
+
+                                if (fontData.selectedModule?.isCMP == false) {
+                                    LabelContent(
+                                        "Use Kotlin Path"
+                                    ) {
+                                        Checkbox(
+                                            checked = fontData.useKotlinPath,
+                                            onCheckedChange = {
+                                                fontData = fontData.copy(useKotlinPath = it)
+                                            }
+                                        )
+                                    }
+                                }
+                                LabelContent("Class Path Preview") {
+                                    Text(fontData.previewClassPath().replace(project.basePath!!,""))
+                                }
+                                FontTable(
+                                    normalFontList = fontData.normalFontPath,
+                                    italicFontList = fontData.italicFontPath,
+                                    updateNormalFontList = { index, path ->
+                                        fontData = fontData.updateNormalFont(index, path)
+                                    },
+                                    updateItalicFontList = {index, path ->
+                                        fontData = fontData.updateItalicFont(index, path)
+                                    }
+                                )
+                            } else {
+                                Text("Can't find module in this project\n please wait finish Sync..")
+                            }
                         }
                     }
                 }
             }
         }
-        val panel = JPanel()
-        panel.layout = BoxLayout(panel, BoxLayout.Y_AXIS)
-
-
-        panel.add(
-            JPanelUI.makeInputRow("Font Class Name") { text ->
-                PathUtil.fileName = text
-                JPanelUI.updateInfo()
-            }
-        )
-
-        panel.add(
-            JPanelUI.makeModuleSpinner(project) { text ->
-                PathUtil.setModule(text)
-                JPanelUI.updateInfo()
-            }
-        )
-
-        panel.add(
-            Box.createVerticalStrut(5)
-        )
-
-        panel.add(
-            JPanelUI.makeInfoPanel()
-        )
-
-        panel.add(
-            JPanelUI.makeFontTable()
-        )
-
-        return panel
     }
 
 
     override fun doOKAction() {
-        if (PathUtil.fileName.isEmpty()) {
-            return
-        }
-        if (PathUtil.module.isEmpty()) {
-            return
-        }
-
-        val fontCheckList: MutableList<FontCheck> = mutableListOf()
-
-        fontArray.forEachIndexed { index, path ->
-            if (path.isNotEmpty()) {
-                fontCheckList.add(
-                    FontCheck(
-                        (index % 2 == 0),
-                         index/ 2,
-                        path
-                    )
-                )
+        fontDataResult?.let { fontData ->
+            if (fontData.fileName.isEmpty()) {
+                return
             }
+
+            if (fontData.selectedModule == null) {
+                return
+            }
+
+            if (fontData.normalFontPath.filterNotNull().isEmpty() && fontData.italicFontPath.filterNotNull().isEmpty()) {
+                return
+            }
+
+            FontUtil.makeFontFamilyFile(project,fontData)
+            super.doOKAction()
         }
-
-        fontCheckList.map { fontCheck -> FontUtil.copyFontFile(fontCheck) }
-
-        FontUtil.makeFontFamilyAndroidProject(fontCheckList)
-
-        super.doOKAction()
-
     }
 
     override fun doCancelAction() {

@@ -17,16 +17,19 @@ repositories {
     }
     maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
 }
+
+
 dependencies {
     implementation(compose.desktop.currentOs)
+    implementation("com.darkrockstudios:mpfilepicker:3.1.0")
     intellijPlatform {
-//        local("/Applications/Android Studio.app")
+//        local("/Applications/Android Studio.app/Contents")
         androidStudio("2024.1.3.1")
         //Targeting 2023.3+
         //Note that Android plugin is no longer bundled with the IDE.
         //
         //Use plugin("org.jetbrains.android:$VERSION$") instead of bundledPlugin(...).
-        plugin("org.jetbrains.android:242.23339.11")
+        plugin("org.jetbrains.android:242.23726.103")
     }
 }
 

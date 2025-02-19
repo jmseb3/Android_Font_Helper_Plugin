@@ -11,11 +11,17 @@ version = "2.0.0"
 
 repositories {
     mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://packages.jetbrains.team/maven/p/kpm/public")
     google()
     intellijPlatform {
         defaultRepositories()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+        maven("https://packages.jetbrains.team/maven/p/kpm/public")
+        mavenCentral()
+        google()
     }
-    maven { url = uri("https://maven.pkg.jetbrains.space/public/p/compose/dev") }
+
 }
 
 
@@ -23,13 +29,12 @@ dependencies {
     implementation(compose.desktop.currentOs)
     implementation("com.darkrockstudios:mpfilepicker:3.1.0")
     intellijPlatform {
-//        local("/Applications/Android Studio.app/Contents")
-        androidStudio("2024.1.3.1")
-        //Targeting 2023.3+
-        //Note that Android plugin is no longer bundled with the IDE.
-        //
-        //Use plugin("org.jetbrains.android:$VERSION$") instead of bundledPlugin(...).
-        plugin("org.jetbrains.android:242.23726.103")
+        local("/Applications/Android Studio.app/Contents")
+//        androidStudio("2024.2.2.13")
+
+        pluginVerifier()
+        zipSigner()
+        instrumentationTools()
     }
 }
 
@@ -44,7 +49,7 @@ java {
 intellijPlatform {
     pluginConfiguration {
         name = "FontHelper"
-        ideaVersion.sinceBuild.set("223")
+        ideaVersion.sinceBuild.set("242")
         ideaVersion.untilBuild.set(provider { null })
     }
 

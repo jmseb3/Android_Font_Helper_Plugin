@@ -31,8 +31,6 @@
   <!-- Product and plugin compatibility requirements.
        Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
-    <depends>com.intellij.modules.androidstudio</depends>
-
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
@@ -50,7 +48,7 @@
             <add-to-group group-id="ToolsMenu" anchor="last"/>
             <keyboard-shortcut
                     keymap="$default"
-                    first-keystroke="control alt F"
+                    first-keystroke="control F"
                     second-keystroke="H"/>
         </action>
     </actions>

@@ -9,6 +9,7 @@ import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.FontType
 import java.io.File
+import java.util.*
 
 /**
  * Font Helper Object
@@ -108,7 +109,7 @@ object FontUtil {
                 st.appendLine("import org.jetbrains.compose.resources.Font")
                 st.appendLine()
                 st.appendLine("@Composable")
-                st.appendLine("fun get${lowerName.capitalize()}Font(): FontFamily {")
+                st.appendLine("fun get${lowerName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}Font(): FontFamily {")
                 st.appendLine("\treturn FontFamily(")
             } else {
                 st.appendLine("import androidx.compose.ui.text.font.Font")

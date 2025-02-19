@@ -1,11 +1,7 @@
 package com.wonddak.fonthelper
 
-import com.intellij.notification.Notification
-import com.intellij.notification.NotificationType
-import com.intellij.notification.Notifications
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.wonddak.fonthelper.util.FontUtil
 
 class FontHelper : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -14,6 +10,7 @@ class FontHelper : AnAction() {
             println("FontHelper Can't find project")
             return
         }
+        println("FontHelper Open")
         FontHelperDialog(project).show()
     }
 }

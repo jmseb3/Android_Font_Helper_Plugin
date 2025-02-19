@@ -72,7 +72,6 @@ class FontHelperDialog(
                                 .padding(10.dp),
                             verticalArrangement = Arrangement.spacedBy(15.dp)
                         ) {
-                            Text(fontData.toString())
                             InputRow(
                                 "Font Class Name",
                                 fontData.fileName,

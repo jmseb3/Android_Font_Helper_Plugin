@@ -14,16 +14,15 @@
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
-    <description><![CDATA[
-      <p>Font Helper For Android Compose</p>
-      <br/>
-      <p>"Font Helper" helps to easily create "FontFamily Class" based on user's font file.</p>
-      <br/>
-      <p>See also:</p>
-      <ul>
-        <li><a href="https://github.com/jmseb3/Android_Font_Helper_Plugin">GitHub repository</a>: Check Src code</li>
-      </ul>
-    ]]>>
+    <description>
+        <![CDATA[
+          <p><strong>Font Helper for Android Compose</strong></p>
+          <p>A simple tool to generate a <code>FontFamily</code> class from your font files.</p>
+          <p><strong>Resources:</strong></p>
+          <ul>
+            <li><a href="https://github.com/jmseb3/Android_Font_Helper_Plugin">GitHub Repository</a> - Source code & documentation</li>
+          </ul>
+        ]]>
     </description>
     <change-notes>
         Support CMP Project
@@ -46,10 +45,13 @@
                 id="com.wonddak.fonthelper.FontHelper"
                 class="com.wonddak.fonthelper.FontHelper"
                 text="Font Helper"
-                description="Open font helper dialog"
-                icon="icons/pluginIcon.svg">
+                description="Open font helper dialog">
             >
             <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <keyboard-shortcut
+                    keymap="$default"
+                    first-keystroke="control alt F"
+                    second-keystroke="H"/>
         </action>
     </actions>
 </idea-plugin>

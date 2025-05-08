@@ -8,7 +8,7 @@ import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountBox
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -28,10 +28,10 @@ import com.wonddak.fonthelper.util.FontUtil
 
 @Composable
 fun FontTable(
-    normalFontList : List<FontType.Normal?>,
-    italicFontList : List<FontType.Italic?>,
-    updateNormalFontList : (Int,String) -> Unit,
-    updateItalicFontList : (Int,String) -> Unit,
+    normalFontList: List<FontType.Normal?>,
+    italicFontList: List<FontType.Italic?>,
+    updateNormalFontList: (Int, String) -> Unit,
+    updateItalicFontList: (Int, String) -> Unit,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -69,20 +69,20 @@ fun FontTable(
                     text = FontUtil.getWeightTextByIndex(index),
                     modifier = labelModifier,
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight((index + 1)*100)
+                    fontWeight = FontWeight((index + 1) * 100)
                 )
                 FontBox(
                     modifier = contentModifier,
                     path = normalFontList[index]?.path ?: "",
                     onNewPath = {
-                        updateNormalFontList(index,it)
+                        updateNormalFontList(index, it)
                     }
                 )
                 FontBox(
                     modifier = contentModifier,
                     path = italicFontList[index]?.path ?: "",
                     onNewPath = {
-                        updateItalicFontList(index,it)
+                        updateItalicFontList(index, it)
                     }
                 )
             }
@@ -94,8 +94,8 @@ fun FontTable(
 @Composable
 private fun FontBox(
     modifier: Modifier,
-    path :String,
-    onNewPath : (path :String) -> Unit
+    path: String,
+    onNewPath: (path: String) -> Unit
 ) {
     var showFilePicker by remember { mutableStateOf(false) }
 
@@ -117,7 +117,7 @@ private fun FontBox(
                     val filePaths = data.readFiles()
                     val filePath = filePaths.first()
                     if (filePath.endsWith("ttf") || filePath.endsWith("otf")) {
-                        onNewPath(filePath.replace("file:",""))
+                        onNewPath(filePath.replace("file:", ""))
                         return true
                     }
                 }
@@ -143,7 +143,7 @@ private fun FontBox(
                     showFilePicker = true
                 }
             ) {
-                Icon(Icons.Default.AccountBox, null)
+                Icon(Icons.Default.AttachFile, null)
             }
         }
     )

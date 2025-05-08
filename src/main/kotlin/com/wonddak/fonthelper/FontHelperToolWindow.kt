@@ -10,8 +10,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,12 +48,18 @@ class FontHelperToolWindow : ToolWindowFactory,
 
     private var moduleList: List<ModuleData> = emptyList()
 
-    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        System.setProperty("compose.swing.render.on.graphics", "true")
+    private fun loadModule(
+        project : Project
+    ) {
         moduleList = ModuleFinder.findModule(project)
         moduleList.forEach {
             println("[KK] $it")
         }
+    }
+
+    override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
+        System.setProperty("compose.swing.render.on.graphics", "true")
+        loadModule(project)
         toolWindow.apply {
             addComposePanel {
                 Compose17IJSizeBugWorkaround {
@@ -58,8 +68,8 @@ class FontHelperToolWindow : ToolWindowFactory,
                             var fontData by rememberSaveable {
                                 mutableStateOf(
                                     FontData(
-                                        fileName = "Roboto",
-                                        packageName = "dev.wonddak.capturableExample",
+                                        fileName = "",
+                                        packageName = "",
                                         useKotlinPath = false
                                     )
                                 )
@@ -122,17 +132,27 @@ class FontHelperToolWindow : ToolWindowFactory,
                                             fontData = fontData.updateItalicFont(index, path)
                                         }
                                     )
+                                    Button(
+                                        onClick = {
+                                            FontUtil.makeFontFamilyFile(project, fontData)
+                                        },
+                                        enabled = fontData.enabledOk()
+                                    ) {
+                                        Text("Add")
+                                    }
                                 } else {
                                     Text("Can't find module in this project\n please wait finish Sync..")
+                                    IconButton(
+                                        onClick = {
+                                            loadModule(project)
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Refresh,null
+                                        )
+                                    }
                                 }
-                                Button(
-                                    onClick = {
-                                        FontUtil.makeFontFamilyFile(project, fontData)
-                                    },
-                                    enabled = fontData.enabledOk()
-                                ) {
-                                    Text("Add")
-                                }
+
                             }
                         }
                     }

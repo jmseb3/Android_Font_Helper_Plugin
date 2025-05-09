@@ -18,16 +18,30 @@ object FontUtil {
     const val NORMAL = "Normal"
     const val ITALIC = "Italic"
 
+    object FontTypeConst {
+        const val THIN = "Thin"
+        const val EXTRA_LIGHT = "ExtraLight"
+        const val LIGHT = "Light"
+        const val NORMAL = "Normal"
+        const val REGULAR = "Regular"
+        const val MEDIUM = "Medium"
+        const val SEMI_BOLD = "SemiBold"
+        const val BOLD = "Bold"
+        const val EXTRA_BOLD = "ExtraBold"
+        const val BLACK = "Black"
+    }
+
+
     private val indexToWeight: Map<Int, String> = mapOf(
-        0 to "Thin",
-        1 to "ExtraLight",
-        2 to "Light",
-        3 to "Normal",
-        4 to "Medium",
-        5 to "SemiBold",
-        6 to "Bold",
-        7 to "ExtraBold",
-        8 to "Black"
+        0 to FontTypeConst.THIN,
+        1 to FontTypeConst.EXTRA_LIGHT,
+        2 to FontTypeConst.LIGHT,
+        3 to FontTypeConst.NORMAL,
+        4 to FontTypeConst.MEDIUM,
+        5 to FontTypeConst.SEMI_BOLD,
+        6 to FontTypeConst.BOLD,
+        7 to FontTypeConst.EXTRA_BOLD,
+        8 to FontTypeConst.BLACK
     )
 
 

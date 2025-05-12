@@ -9,6 +9,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -100,7 +102,10 @@ private fun FontBox(
     var showFilePicker by remember { mutableStateOf(false) }
 
     val fileType = listOf("ttf", "otf")
-    FilePicker(show = showFilePicker, fileExtensions = fileType) { platformFile ->
+    FilePicker(
+        show = showFilePicker,
+        fileExtensions = fileType,
+    ) { platformFile ->
         showFilePicker = false
         // do something with the file
         platformFile?.let {
@@ -138,12 +143,22 @@ private fun FontBox(
             ),
         singleLine = true,
         trailingIcon = {
-            IconButton(
-                onClick = {
-                    showFilePicker = true
+            if (path.isNotEmpty()) {
+                IconButton(
+                    onClick = {
+                        onNewPath("")
+                    }
+                ) {
+                    Icon(Icons.Default.Clear, null)
                 }
-            ) {
-                Icon(Icons.Default.AttachFile, null)
+            } else {
+                IconButton(
+                    onClick = {
+                        showFilePicker = true
+                    }
+                ) {
+                    Icon(Icons.Default.FolderOpen, null)
+                }
             }
         }
     )

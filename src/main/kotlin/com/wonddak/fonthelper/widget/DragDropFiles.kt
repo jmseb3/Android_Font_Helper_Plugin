@@ -27,7 +27,10 @@ import androidx.compose.ui.draganddrop.DragAndDropEvent
 import androidx.compose.ui.draganddrop.DragAndDropTarget
 import androidx.compose.ui.draganddrop.DragData
 import androidx.compose.ui.draganddrop.dragData
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.wonddak.fonthelper.setting.FontMatchSettingsService
 import com.wonddak.fonthelper.setting.FontMatchSettingsState
@@ -76,18 +79,24 @@ fun DragDropFiles(
             }
         }
     }
+
+    val stroke = Stroke(
+        width = 2f,
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+    )
+
+    val color = MaterialTheme.colors.primary
+
     Box(
         modifier = Modifier
             .fillMaxWidth(0.8f)
             .heightIn(min = 150.dp)
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colors.primary,
-                shape = RoundedCornerShape(10.dp),
-            )
+            .drawBehind {
+                drawRoundRect(color = color, style = stroke)
+            }
             .background(
                 color = when {
-                    isHover -> MaterialTheme.colors.primary.copy(alpha = 0.05f)
+                    isHover -> color.copy(alpha = 0.05f)
                     else -> Color.Transparent
                 },
                 shape = MaterialTheme.shapes.small,

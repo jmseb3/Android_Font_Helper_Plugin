@@ -41,6 +41,13 @@
                     doNotActivateOnStart="false"
                     factoryClass="com.wonddak.fonthelper.FontHelperToolWindow"
                     icon="icons/ic_logo_tool_window.svg"/>
+
+        <applicationService serviceImplementation="com.wonddak.fonthelper.setting.FontMatchSettingsService"/>
+        <projectConfigurable
+                parentId="tools"
+                id="FontMatchSettingsConfigurable"
+                displayName="Font Helper Settings"
+                instance="com.wonddak.fonthelper.setting.FontMatchSettingsConfigurable"/>
     </extensions>
 
     <extensions defaultExtensionNs="org.jetbrains.kotlin">

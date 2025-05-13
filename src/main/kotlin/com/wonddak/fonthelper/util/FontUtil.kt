@@ -2,8 +2,10 @@ package com.wonddak.fonthelper.util
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
+import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontData
@@ -75,7 +77,10 @@ object FontUtil {
 
 
     // make File
-    fun makeFontFamilyFile(project: Project, fontData: FontData) {
+    fun makeFontFamilyFile(
+        project: Project,
+        fontData: FontData
+    ) {
         ApplicationManager.getApplication().runWriteAction {
             val directory = VfsUtil.createDirectoryIfMissing(fontData.getSaveClassPath())
             println("JJ1 $directory")
@@ -93,6 +98,16 @@ object FontUtil {
                 psiFile = psiDirectory.createFile(classFileName)
                 println("JJ5 $psiFile")
                 psiFile.virtualFile.setBinaryContent(makeContentString(fontData).toByteArray())
+
+                //Refresh Class File
+                VfsUtil.markDirtyAndRefresh(true,true,true,psiFile.virtualFile)
+
+                //Refresh Font Dir
+                LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
+                    VfsUtil.markDirtyAndRefresh(true,true,true,  it)
+                }
+                //Open Class File
+                FileEditorManager.getInstance(project).openFile(psiFile.virtualFile, true)
             }
         }
     }

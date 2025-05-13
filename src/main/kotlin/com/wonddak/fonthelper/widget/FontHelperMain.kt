@@ -4,11 +4,13 @@ import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
+import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Surface
@@ -34,7 +36,6 @@ import com.wonddak.fonthelper.util.FontUtil
 fun FontHelperMain(
     project: Project,
     moduleList: List<ModuleData>,
-    reload: () -> Unit
 ) {
     WidgetTheme(darkTheme = true) {
         Surface() {
@@ -54,19 +55,16 @@ fun FontHelperMain(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
-                Text(
-                    fontData.toString()
-                )
                 InputRow(
-                    "Font Class Name",
-                    fontData.fileName,
+                    title = "Font Class Name",
+                    text = fontData.fileName,
                     onValueChange = {
                         fontData = fontData.copy(fileName = it)
                     }
                 )
                 InputRow(
-                    "Package Name",
-                    fontData.packageName,
+                    title = "Package Name",
+                    text = fontData.packageName,
                     onValueChange = {
                         fontData = fontData.copy(packageName = it)
                     }
@@ -119,22 +117,31 @@ fun FontHelperMain(
                         }
                     )
                     Button(
+                        modifier = Modifier.fillMaxWidth(0.3f)
+                            .align(Alignment.End),
                         onClick = {
-                            FontUtil.makeFontFamilyFile(project, fontData)
+                            fontData = fontData.clearAllFont()
+                        },
+                        enabled = fontData.totalFontPath.isNotEmpty()
+                    ) {
+                        Text("Clear All Font")
+                    }
+                    Divider()
+                    Button(
+                        modifier = Modifier.fillMaxWidth(0.7f)
+                            .align(Alignment.Start),
+                        onClick = {
+                            FontUtil.makeFontFamilyFile(
+                                project = project,
+                                fontData = fontData
+                            )
                         },
                         enabled = fontData.enabledOk()
                     ) {
                         Text("Add")
                     }
                 } else {
-                    Text("Can't find module in this project\n please wait finish Sync..")
-                    IconButton(
-                        onClick = reload
-                    ) {
-                        Icon(
-                            Icons.Filled.Refresh, null
-                        )
-                    }
+                    Text("Can't find module in this project\n please wait finish Sync And re-open FontHelper")
                 }
 
             }

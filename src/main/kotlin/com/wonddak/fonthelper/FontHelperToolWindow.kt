@@ -39,10 +39,7 @@ class FontHelperToolWindow : ToolWindowFactory,
                 Compose17IJSizeBugWorkaround {
                     FontHelperMain(
                         project,
-                        moduleList,
-                        reload = {
-                            loadModule(project)
-                        }
+                        moduleList
                     )
                 }
             }

@@ -3,7 +3,7 @@ package com.wonddak.fonthelper.model
 /**
  * FontSaveData
  * @param[fileName] saveFileName if roboto then Roboto.kt
- * @param[selectedModule] selectModule in proejct
+ * @param[selectedModule] selectModule in project
  * @param[packageName] packageName in project
  * @param[useKotlinPath] use "kotlin" path instead "java" this is work only android project
  * @param[normalFontPath] normal font List
@@ -95,6 +95,13 @@ data class FontData(
         val temp = italicFontPath.toMutableList()
         temp[index] = FontType.Italic(path, index)
         return this.copy(italicFontPath = temp)
+    }
+
+    fun clearAllFont() : FontData {
+        return this.copy(
+            normalFontPath = List(9) { null },
+            italicFontPath = List(9) { null }
+        )
     }
 
     fun enabledOk() :Boolean {

@@ -115,10 +115,10 @@ object FontUtil {
                 st.appendLine("import androidx.compose.ui.text.font.FontStyle")
                 st.appendLine("import androidx.compose.ui.text.font.FontWeight")
 
-                st.appendLine("import ${module.lastModuleName}.generated.resources.Res")
+                st.appendLine("import ${module.importModuleName}.generated.resources.Res")
                 fontData.totalFontPath.forEach { font ->
                     val fontName = font.makeFontFileName(lowerName, false)
-                    st.appendLine("import ${module.lastModuleName}.generated.resources.${fontName}")
+                    st.appendLine("import ${module.importModuleName}.generated.resources.${fontName}")
                 }
                 st.appendLine("import org.jetbrains.compose.resources.Font")
                 st.appendLine()

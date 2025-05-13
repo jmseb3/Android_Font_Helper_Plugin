@@ -11,12 +11,8 @@ data class ModuleData(
     var path: String = "",
     var isCMP: Boolean = false,
 ) {
-    val lastModuleName : String
-        get() = if (name.contains(".")) {
-            name.split(".").last().lowercase()
-        } else {
-            name.lowercase()
-        }
+    val importModuleName : String
+        get() = name.lowercase().replace("-","_")
     /**
      * make font save path
      */

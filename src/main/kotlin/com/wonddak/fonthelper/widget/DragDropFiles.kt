@@ -38,6 +38,7 @@ import com.wonddak.fonthelper.setting.FontMatchSettingsState
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun DragDropFiles(
+    modifier: Modifier,
     updateNormalFontList: (Int, String) -> Unit,
     updateItalicFontList: (Int, String) -> Unit,
 ) {
@@ -62,11 +63,12 @@ fun DragDropFiles(
                     val filePaths = data.readFiles()
                     for (filePath in filePaths) {
                         if (!filePath.endsWith(".ttf") && !filePath.endsWith(".otf")) continue
+                        val newPath = filePath.replace("file:", "")
 
-                        val fileName = filePath.trimEnd('/').substringAfterLast('/').lowercase()
+                        val fileName = newPath.trimEnd('/').substringAfterLast('/').lowercase()
                         settings.checkType(fileName)?.let { (isItalic, weight) ->
-                            if (isItalic) updateItalicFontList(weight, filePath)
-                            else updateNormalFontList(weight, filePath)
+                            if (isItalic) updateItalicFontList(weight, newPath)
+                            else updateNormalFontList(weight, newPath)
                         }
                     }
                 }
@@ -88,7 +90,7 @@ fun DragDropFiles(
     val color = MaterialTheme.colors.primary
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth(0.8f)
             .heightIn(min = 150.dp)
             .drawBehind {

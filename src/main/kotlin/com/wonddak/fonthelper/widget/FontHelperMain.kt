@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.project.Project
@@ -53,6 +54,9 @@ fun FontHelperMain(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(15.dp)
             ) {
+                Text(
+                    fontData.toString()
+                )
                 InputRow(
                     "Font Class Name",
                     fontData.fileName,
@@ -96,6 +100,7 @@ fun FontHelperMain(
                     }
 
                     DragDropFiles(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
                         updateNormalFontList = { index, path ->
                             fontData = fontData.updateNormalFont(index, path)
                         },

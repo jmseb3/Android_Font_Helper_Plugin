@@ -2,6 +2,7 @@ package com.wonddak.fonthelper.widget
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,11 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -74,7 +79,9 @@ fun GoogleFontsImportDialog(
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
-                modifier = Modifier.padding(14.dp),
+                modifier = Modifier
+                    .padding(14.dp)
+                    .heightIn(min = 520.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
@@ -112,7 +119,7 @@ fun GoogleFontsImportDialog(
                             LazyColumn(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 240.dp, max = 360.dp)
+                                    .heightIn(min = 180.dp, max = 280.dp)
                             ) {
                                 items(filtered) { family ->
                                     val selected = selectedFamily == family.family
@@ -138,20 +145,50 @@ fun GoogleFontsImportDialog(
                     }
                 }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel")
-                    }
-                    Button(
-                        onClick = {
-                            selectedFamily?.let(onImport)
-                        },
-                        enabled = !loading && selectedFamily != null
-                    ) {
-                        Text("Import")
+                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                    val narrow = maxWidth < 460.dp
+                    if (narrow) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            TextButton(
+                                onClick = onDismiss,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = null)
+                                Text(" Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    selectedFamily?.let(onImport)
+                                },
+                                enabled = !loading && selectedFamily != null,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Text(" Next: Select Files")
+                            }
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = onDismiss) {
+                                Icon(Icons.Default.Close, contentDescription = null)
+                                Text(" Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    selectedFamily?.let(onImport)
+                                },
+                                enabled = !loading && selectedFamily != null
+                            ) {
+                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Text(" Next: Select Files")
+                            }
+                        }
                     }
                 }
             }

@@ -1,6 +1,7 @@
 package com.wonddak.fonthelper.widget
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,11 +15,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
+import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +38,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.DpSize
@@ -74,6 +84,7 @@ fun FontHelperMain(
             var conflictSelectionState by remember { mutableStateOf<ImportConflictSelectionState?>(null) }
             var googleFileSelectionState by remember { mutableStateOf<GoogleFileSelectionState?>(null) }
             var packageNameTouchedByUser by rememberSaveable { mutableStateOf(false) }
+            val contentScroll = rememberScrollState()
 
             FilePicker(
                 show = showDownloadedZipPicker,
@@ -128,7 +139,7 @@ fun FontHelperMain(
                         .fillMaxSize()
                         .padding(14.dp)
                         .padding(bottom = 86.dp)
-                        .verticalScroll(rememberScrollState()),
+                        .verticalScroll(contentScroll),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                 Text(
@@ -276,21 +287,24 @@ fun FontHelperMain(
                                             enabled = !downloadingGoogleFont,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text("Clear Download Cache")
+                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                            Text(" Clear Cache")
                                         }
                                         Button(
                                             onClick = { showDownloadedZipPicker = true },
                                             enabled = !downloadingGoogleFont,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text("Import Downloaded ZIP")
+                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                            Text(" Import ZIP")
                                         }
                                         Button(
                                             onClick = { showGoogleFontsDialog = true },
                                             enabled = !downloadingGoogleFont,
                                             modifier = Modifier.fillMaxWidth()
                                         ) {
-                                            Text("Import from Google Fonts (Experimental)")
+                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                            Text(" Google Fonts (Beta)")
                                         }
                                     }
                                 } else {
@@ -316,19 +330,22 @@ fun FontHelperMain(
                                             },
                                             enabled = !downloadingGoogleFont
                                         ) {
-                                            Text("Clear Download Cache")
+                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                            Text(" Clear Cache")
                                         }
                                         Button(
                                             onClick = { showDownloadedZipPicker = true },
                                             enabled = !downloadingGoogleFont
                                         ) {
-                                            Text("Import Downloaded ZIP")
+                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                            Text(" Import ZIP")
                                         }
                                         Button(
                                             onClick = { showGoogleFontsDialog = true },
                                             enabled = !downloadingGoogleFont
                                         ) {
-                                            Text("Import from Google Fonts (Experimental)")
+                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                            Text(" Google Fonts (Beta)")
                                         }
                                     }
                                 }
@@ -519,7 +536,8 @@ fun FontHelperMain(
                             },
                             enabled = fontData.totalFontPath.isNotEmpty()
                         ) {
-                            Text("Clear All Fonts")
+                            Icon(Icons.Default.Delete, contentDescription = null)
+                            Text(" Clear All")
                         }
                         Button(
                             onClick = {
@@ -530,7 +548,30 @@ fun FontHelperMain(
                             },
                             enabled = moduleList.isNotEmpty() && fontData.enabledOk()
                         ) {
-                            Text("Generate FontFamily")
+                            Icon(Icons.Default.Build, contentDescription = null)
+                            Text(" Generate")
+                        }
+                    }
+                }
+
+                if (downloadingGoogleFont) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colors.surface.copy(alpha = 0.72f))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                onClick = {}
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text("Processing fonts...", style = MaterialTheme.typography.body2)
                         }
                     }
                 }
@@ -664,15 +705,15 @@ private fun ImportConflictDialog(
     onDismiss: () -> Unit,
     onApply: (Map<FontSlotKey, File>) -> Unit
 ) {
-    val initialSelection = remember(state) {
-        state.conflicts.associate { it.slot to it.candidates.first() }
-    }
+    val conflictSlots = remember(state) { state.conflicts.map { it.slot } }
+    val initialSelection = remember(state) { state.conflicts.associate { it.slot to it.candidates.first() } }
     var selections by remember(state) { mutableStateOf(initialSelection) }
+    var currentIndex by remember(state) { mutableStateOf(0) }
 
     DialogWindow(
         onCloseRequest = onDismiss,
         title = "Resolve Font Type Conflicts",
-        state = rememberDialogState(size = DpSize(720.dp, 560.dp))
+        state = rememberDialogState(size = DpSize(720.dp, 520.dp))
     ) {
         Surface(
             shape = MaterialTheme.shapes.medium,
@@ -686,27 +727,49 @@ private fun ImportConflictDialog(
                     text = "Multiple files matched the same type. Select one file per slot.",
                     style = MaterialTheme.typography.body2
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    state.conflicts.forEach { conflict ->
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            elevation = 1.dp,
-                            shape = MaterialTheme.shapes.small
+                if (conflictSlots.isNotEmpty()) {
+                    val slot = conflictSlots[currentIndex]
+                    val conflict = state.conflicts.first { it.slot == slot }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = { if (currentIndex > 0) currentIndex -= 1 },
+                            enabled = currentIndex > 0
+                        ) { Text("Prev") }
+                        Text(
+                            text = "${currentIndex + 1} / ${conflictSlots.size}",
+                            style = MaterialTheme.typography.caption
+                        )
+                        TextButton(
+                            onClick = { if (currentIndex < conflictSlots.lastIndex) currentIndex += 1 },
+                            enabled = currentIndex < conflictSlots.lastIndex
+                        ) { Text("Next") }
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = 1.dp,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
+                            Text(
+                                text = conflict.slot.displayText(),
+                                fontWeight = FontWeight.SemiBold
+                            )
                             Column(
-                                modifier = Modifier.padding(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 240.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
-                                Text(
-                                    text = conflict.slot.displayText(),
-                                    fontWeight = FontWeight.SemiBold
-                                )
                                 conflict.candidates.forEach { candidate ->
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -716,6 +779,9 @@ private fun ImportConflictDialog(
                                             selected = selections[conflict.slot] == candidate,
                                             onClick = {
                                                 selections = selections + (conflict.slot to candidate)
+                                                if (currentIndex < conflictSlots.lastIndex) {
+                                                    currentIndex += 1
+                                                }
                                             }
                                         )
                                         Text(

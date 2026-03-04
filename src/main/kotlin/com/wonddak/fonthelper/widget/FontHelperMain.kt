@@ -46,7 +46,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.rememberDialogState
-import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
@@ -56,6 +55,7 @@ import com.wonddak.fonthelper.theme.WidgetTheme
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.GoogleFontFileRef
 import com.wonddak.fonthelper.util.GoogleFontsUtil
+import com.wonddak.fonthelper.util.IdeFileChooserUtil
 import com.wonddak.fonthelper.util.PackageNameResolver
 import kotlinx.coroutines.launch
 import java.io.File
@@ -81,7 +81,6 @@ fun FontHelperMain(
                 )
             }
             var showGoogleFontsDialog by remember { mutableStateOf(false) }
-            var showDownloadedZipPicker by remember { mutableStateOf(false) }
             var downloadingGoogleFont by remember { mutableStateOf(false) }
             var googleImportMessage by remember { mutableStateOf<String?>(null) }
             var conflictSelectionState by remember { mutableStateOf<ImportConflictSelectionState?>(null) }
@@ -91,53 +90,6 @@ fun FontHelperMain(
             var selectedTab by rememberSaveable { mutableStateOf(MainContentTab.SETUP) }
             val setupScroll = rememberScrollState()
             val fontsScroll = rememberScrollState()
-
-            FilePicker(
-                show = showDownloadedZipPicker,
-                fileExtensions = listOf("zip")
-            ) { platformFile ->
-                showDownloadedZipPicker = false
-                val pickedPath = platformFile?.path?.normalizeDroppedPath().orEmpty()
-                if (pickedPath.isBlank()) return@FilePicker
-
-                scope.launch {
-                    downloadingGoogleFont = true
-                    googleImportMessage = "Importing ZIP..."
-                    try {
-                        val downloaded = GoogleFontsUtil.importFontsFromZip(File(pickedPath))
-                        val settings = FontMatchSettingsService.getInstance().state
-                        val analysis = analyzeImportedFonts(downloaded, settings)
-                        val autoAssignments = analysis.groups
-                            .filterValues { it.size == 1 }
-                            .mapValues { it.value.first() }
-                        var updated = applyImportedFonts(fontData, autoAssignments)
-                        fontData = updated
-
-                        val conflicts = analysis.groups
-                            .filterValues { it.size > 1 }
-                            .entries
-                            .sortedBy { it.key.displayText() }
-                            .map { (slot, files) -> ImportConflict(slot, files.sortedBy { it.name.lowercase() }) }
-
-                        if (analysis.matchedCount == 0) {
-                            googleImportMessage = "ZIP imported, but no variants matched current keywords."
-                        } else if (conflicts.isEmpty()) {
-                            googleImportMessage = "ZIP imported. ${analysis.matchedCount} variants mapped."
-                        } else {
-                            conflictSelectionState = ImportConflictSelectionState(
-                                sourceLabel = "ZIP",
-                                currentFontData = updated,
-                                conflicts = conflicts
-                            )
-                            googleImportMessage = "ZIP imported. ${autoAssignments.size} auto-mapped, ${conflicts.size} conflicts need selection."
-                        }
-                    } catch (e: Exception) {
-                        googleImportMessage = "ZIP import failed: ${e.message ?: "Unknown error"}"
-                    } finally {
-                        downloadingGoogleFont = false
-                    }
-                }
-            }
 
             if (moduleList.isNotEmpty()) {
                 LaunchedEffect(moduleList) {
@@ -338,7 +290,51 @@ fun FontHelperMain(
                                                             Text(" Clear Cache")
                                                         }
                                                         Button(
-                                                            onClick = { showDownloadedZipPicker = true },
+                                                            onClick = {
+                                                                IdeFileChooserUtil.chooseSingleFile(
+                                                                    project = project,
+                                                                    title = "Select Downloaded Google Fonts ZIP",
+                                                                    allowedExtensions = setOf("zip")
+                                                                ) { pickedPath ->
+                                                                    scope.launch {
+                                                                        downloadingGoogleFont = true
+                                                                        googleImportMessage = "Importing ZIP..."
+                                                                        try {
+                                                                            val downloaded = GoogleFontsUtil.importFontsFromZip(File(pickedPath))
+                                                                            val settings = FontMatchSettingsService.getInstance().state
+                                                                            val analysis = analyzeImportedFonts(downloaded, settings)
+                                                                            val autoAssignments = analysis.groups
+                                                                                .filterValues { it.size == 1 }
+                                                                                .mapValues { it.value.first() }
+                                                                            val updated = applyImportedFonts(fontData, autoAssignments)
+                                                                            fontData = updated
+
+                                                                            val conflicts = analysis.groups
+                                                                                .filterValues { it.size > 1 }
+                                                                                .entries
+                                                                                .sortedBy { it.key.displayText() }
+                                                                                .map { (slot, files) -> ImportConflict(slot, files.sortedBy { it.name.lowercase() }) }
+
+                                                                            if (analysis.matchedCount == 0) {
+                                                                                googleImportMessage = "ZIP imported, but no variants matched current keywords."
+                                                                            } else if (conflicts.isEmpty()) {
+                                                                                googleImportMessage = "ZIP imported. ${analysis.matchedCount} variants mapped."
+                                                                            } else {
+                                                                                conflictSelectionState = ImportConflictSelectionState(
+                                                                                    sourceLabel = "ZIP",
+                                                                                    currentFontData = updated,
+                                                                                    conflicts = conflicts
+                                                                                )
+                                                                                googleImportMessage = "ZIP imported. ${autoAssignments.size} auto-mapped, ${conflicts.size} conflicts need selection."
+                                                                            }
+                                                                        } catch (e: Exception) {
+                                                                            googleImportMessage = "ZIP import failed: ${e.message ?: "Unknown error"}"
+                                                                        } finally {
+                                                                            downloadingGoogleFont = false
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
@@ -381,7 +377,51 @@ fun FontHelperMain(
                                                             Text(" Clear Cache")
                                                         }
                                                         Button(
-                                                            onClick = { showDownloadedZipPicker = true },
+                                                            onClick = {
+                                                                IdeFileChooserUtil.chooseSingleFile(
+                                                                    project = project,
+                                                                    title = "Select Downloaded Google Fonts ZIP",
+                                                                    allowedExtensions = setOf("zip")
+                                                                ) { pickedPath ->
+                                                                    scope.launch {
+                                                                        downloadingGoogleFont = true
+                                                                        googleImportMessage = "Importing ZIP..."
+                                                                        try {
+                                                                            val downloaded = GoogleFontsUtil.importFontsFromZip(File(pickedPath))
+                                                                            val settings = FontMatchSettingsService.getInstance().state
+                                                                            val analysis = analyzeImportedFonts(downloaded, settings)
+                                                                            val autoAssignments = analysis.groups
+                                                                                .filterValues { it.size == 1 }
+                                                                                .mapValues { it.value.first() }
+                                                                            val updated = applyImportedFonts(fontData, autoAssignments)
+                                                                            fontData = updated
+
+                                                                            val conflicts = analysis.groups
+                                                                                .filterValues { it.size > 1 }
+                                                                                .entries
+                                                                                .sortedBy { it.key.displayText() }
+                                                                                .map { (slot, files) -> ImportConflict(slot, files.sortedBy { it.name.lowercase() }) }
+
+                                                                            if (analysis.matchedCount == 0) {
+                                                                                googleImportMessage = "ZIP imported, but no variants matched current keywords."
+                                                                            } else if (conflicts.isEmpty()) {
+                                                                                googleImportMessage = "ZIP imported. ${analysis.matchedCount} variants mapped."
+                                                                            } else {
+                                                                                conflictSelectionState = ImportConflictSelectionState(
+                                                                                    sourceLabel = "ZIP",
+                                                                                    currentFontData = updated,
+                                                                                    conflicts = conflicts
+                                                                                )
+                                                                                googleImportMessage = "ZIP imported. ${autoAssignments.size} auto-mapped, ${conflicts.size} conflicts need selection."
+                                                                            }
+                                                                        } catch (e: Exception) {
+                                                                            googleImportMessage = "ZIP import failed: ${e.message ?: "Unknown error"}"
+                                                                        } finally {
+                                                                            downloadingGoogleFont = false
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
                                                             Icon(Icons.Default.AddCircle, contentDescription = null)
@@ -413,6 +453,7 @@ fun FontHelperMain(
                                                 }
                                             )
                                             FontTable(
+                                                project = project,
                                                 normalFontList = fontData.normalFontPath,
                                                 italicFontList = fontData.italicFontPath,
                                                 updateNormalFontList = { index, path ->

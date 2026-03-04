@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "com.wonddak"
-version = "2.1.3"
+version = "2.2.0"
 
 repositories {
     mavenCentral()
@@ -31,15 +31,9 @@ configurations.configureEach {
 
 dependencies {
     compileOnly(compose.desktop.currentOs)
-    implementation(libs.compose.desktop.jvm)
-    implementation(libs.compose.desktop.jvm.linux.arm64)
-    implementation(libs.compose.desktop.jvm.linux.x64)
-    implementation(libs.compose.desktop.jvm.macos.arm64)
-    implementation(libs.compose.desktop.jvm.macos.x64)
-    implementation(libs.compose.desktop.jvm.windows.x64)
-    implementation(libs.compose.material.icons.core.desktop)
+    compileOnly(libs.compose.desktop.jvm)
+    compileOnly(libs.compose.material.icons.core.desktop)
 
-    implementation(libs.mpfilepicker)
     implementation(libs.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
@@ -68,7 +62,7 @@ intellijPlatform {
     pluginConfiguration {
         name = "FontHelper"
         ideaVersion {
-            sinceBuild = "242"
+            sinceBuild = "252"
             untilBuild = provider { null }
         }
     }
@@ -85,7 +79,7 @@ intellijPlatform {
             FailureLevel.NOT_DYNAMIC,
         )
         ides {
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.1") {}
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.2") {}
             create(IntelliJPlatformType.AndroidStudio, libs.versions.androidStudioTarget.get()) {}
         }
     }

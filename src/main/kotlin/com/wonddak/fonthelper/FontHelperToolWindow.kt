@@ -9,6 +9,7 @@ import androidx.compose.ui.awt.ComposePanel
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.toSize
+import io.github.vinceglb.filekit.FileKit
 import com.intellij.openapi.project.DumbAware
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindow
@@ -30,6 +31,7 @@ class FontHelperToolWindow : ToolWindowFactory,
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         System.setProperty("compose.swing.render.on.graphics", "true")
+        ensureFileKitInit()
         loadModule(project)
         toolWindow.apply {
             addComposePanel {
@@ -59,6 +61,17 @@ class FontHelperToolWindow : ToolWindowFactory,
 
     companion object {
         const val ID = "FontHelper"
+        @Volatile
+        private var fileKitInitialized = false
+
+        private fun ensureFileKitInit() {
+            if (fileKitInitialized) return
+            synchronized(this) {
+                if (fileKitInitialized) return
+                FileKit.init("com.wonddak.fonthelper")
+                fileKitInitialized = true
+            }
+        }
     }
 }
 

@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -27,8 +29,11 @@ import androidx.compose.ui.unit.dp
 import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
+import com.wonddak.fonthelper.setting.FontMatchSettingsService
 import com.wonddak.fonthelper.theme.WidgetTheme
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.GoogleFontsUtil
+import kotlinx.coroutines.launch
 
 @Composable
 fun FontHelperMain(
@@ -39,6 +44,7 @@ fun FontHelperMain(
         Surface(
             modifier = Modifier.fillMaxSize()
         ) {
+            val scope = rememberCoroutineScope()
             var fontData by rememberSaveable {
                 mutableStateOf(
                     FontData(
@@ -48,6 +54,10 @@ fun FontHelperMain(
                     )
                 )
             }
+            var showGoogleFontsDialog by remember { mutableStateOf(false) }
+            var downloadingGoogleFont by remember { mutableStateOf(false) }
+            var googleImportMessage by remember { mutableStateOf<String?>(null) }
+
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -150,6 +160,23 @@ fun FontHelperMain(
                                 text = "Font Files",
                                 style = MaterialTheme.typography.subtitle1
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(
+                                    onClick = { showGoogleFontsDialog = true },
+                                    enabled = !downloadingGoogleFont
+                                ) {
+                                    Text("Import from Google Fonts")
+                                }
+                            }
+                            if (googleImportMessage != null) {
+                                Text(
+                                    text = googleImportMessage.orEmpty(),
+                                    style = MaterialTheme.typography.caption
+                                )
+                            }
                             DragDropFiles(
                                 modifier = Modifier.align(Alignment.CenterHorizontally),
                                 updateNormalFontList = { index, path ->
@@ -210,6 +237,48 @@ fun FontHelperMain(
                             style = MaterialTheme.typography.body2
                         )
                     }
+                }
+
+                if (showGoogleFontsDialog) {
+                    GoogleFontsImportDialog(
+                        onDismiss = { showGoogleFontsDialog = false },
+                        onImport = { family ->
+                            showGoogleFontsDialog = false
+                            scope.launch {
+                                downloadingGoogleFont = true
+                                googleImportMessage = "Downloading \"$family\"..."
+                                try {
+                                    val downloaded = GoogleFontsUtil.downloadFamilyFonts(family)
+
+                                    val settings = FontMatchSettingsService.getInstance().state
+                                    var updated = fontData
+                                    var matched = 0
+
+                                    downloaded.forEach { file ->
+                                        val fileName = file.name.lowercase()
+                                        settings.checkType(fileName)?.let { (isItalic, weight) ->
+                                            updated = if (isItalic) {
+                                                updated.updateItalicFont(weight, file.absolutePath)
+                                            } else {
+                                                updated.updateNormalFont(weight, file.absolutePath)
+                                            }
+                                            matched += 1
+                                        }
+                                    }
+                                    fontData = updated
+                                    googleImportMessage = if (matched == 0) {
+                                        "\"$family\" downloaded, but no variants matched current keywords."
+                                    } else {
+                                        "\"$family\" imported. $matched variants mapped."
+                                    }
+                                } catch (e: Exception) {
+                                    googleImportMessage = "Google Fonts import failed: ${e.message ?: "Unknown error"}"
+                                } finally {
+                                    downloadingGoogleFont = false
+                                }
+                            }
+                        }
+                    )
                 }
 
             }

@@ -35,7 +35,10 @@ dependencies {
     implementation(compose.materialIconsExtended)
 
 //    implementation(libs.android.build.tools)
-    implementation("com.darkrockstudios:mpfilepicker:3.1.0")
+    implementation(libs.filekit.dialogs.compose)
+    implementation(libs.serialization.json)
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.cio)
 
     intellijPlatform {
         // And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2024

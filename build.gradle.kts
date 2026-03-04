@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 val localIdePathProvider = providers.gradleProperty("localIdePath")
 val targetAndroidStudioVersionProvider = providers.gradleProperty("androidStudioVersion")
-    .orElse("2025.2.3.9")
+    .orElse(libs.versions.androidStudioTarget.get())
 
 plugins {
     alias(libs.plugins.intellij.platform)
@@ -26,16 +26,16 @@ repositories {
 
 dependencies {
     compileOnly(compose.desktop.currentOs)
-    implementation(compose.desktop.common)
-    implementation(compose.desktop.linux_arm64)
-    implementation(compose.desktop.linux_x64)
-    implementation(compose.desktop.macos_arm64)
-    implementation(compose.desktop.macos_x64)
-    implementation(compose.desktop.windows_x64)
-    implementation(compose.materialIconsExtended)
+    implementation(libs.compose.desktop.jvm)
+    implementation(libs.compose.desktop.jvm.linux.arm64)
+    implementation(libs.compose.desktop.jvm.linux.x64)
+    implementation(libs.compose.desktop.jvm.macos.arm64)
+    implementation(libs.compose.desktop.jvm.macos.x64)
+    implementation(libs.compose.desktop.jvm.windows.x64)
+    implementation(libs.compose.material.icons.extended.desktop)
 
 //    implementation(libs.android.build.tools)
-    implementation(libs.filekit.dialogs.compose)
+    implementation(libs.mpfilepicker)
     implementation(libs.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

@@ -25,13 +25,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import io.github.vinceglb.filekit.FileKit
-import io.github.vinceglb.filekit.absolutePath
-import io.github.vinceglb.filekit.dialogs.FileKitType
-import io.github.vinceglb.filekit.dialogs.openFilePicker
+import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.wonddak.fonthelper.model.FontType
 import com.wonddak.fonthelper.util.FontUtil
-import kotlinx.coroutines.launch
 
 @Composable
 fun FontTable(
@@ -110,7 +106,18 @@ private fun FontBox(
     path: String,
     onNewPath: (path: String) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
+    var showFilePicker by remember { mutableStateOf(false) }
+
+    val fileType = listOf("ttf", "otf")
+    FilePicker(
+        show = showFilePicker,
+        fileExtensions = fileType,
+    ) { platformFile ->
+        showFilePicker = false
+        platformFile?.let {
+            onNewPath(it.path)
+        }
+    }
 
     val callback = remember {
         object : DragAndDropTarget {
@@ -153,12 +160,7 @@ private fun FontBox(
             } else {
                 IconButton(
                     onClick = {
-                        scope.launch {
-                            val picked = FileKit.openFilePicker(
-                                type = FileKitType.File(extensions = listOf("ttf", "otf"))
-                            )
-                            picked?.let { onNewPath(it.absolutePath()) }
-                        }
+                        showFilePicker = true
                     }
                 ) {
                     Icon(Icons.Default.FolderOpen, null)

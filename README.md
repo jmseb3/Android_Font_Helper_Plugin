@@ -1,80 +1,81 @@
-# Font Helper Plugin V2
+# Font Helper Plugin
 
-A font generator plugin for **Android Compose** and **Compose Multiplatform**.  
-Easily create `FontFamily` classes with just a few clicks.
+`Font Helper` generates Compose `FontFamily` code and copies font files into the correct module path for:
+- Android Compose
+- Compose Multiplatform
 
----
+Current release line: **2.1.x**
 
-## How to Install
+## Install
 
-Search for **"Font Helper"** in the JetBrains Plugin Marketplace,  
-or click this [link](https://plugins.jetbrains.com/plugin/21596-fonthelper).
+Search **Font Helper** in JetBrains Marketplace, or install from:
+- [https://plugins.jetbrains.com/plugin/21596-fonthelper](https://plugins.jetbrains.com/plugin/21596-fonthelper)
 
----
+## Open Tool Window
 
-## How to Use
+![open](./screenshot/01.open_tool.png)
 
-![fh_open](./screenshot/01.open_tool.png)
-> Click the **FontHelper icon (FF)** in the right-side tool window of the IDE.
+Open the **FontHelper (FF)** tool window from the IDE right side.
 
----
+## Quick Start
 
-### Steps
+1. Enter **Font Class Name**.
+2. Select **Module**.
+3. Confirm/adjust **Package Name**.
+  Package name is auto-detected from module sources/manifest and can be refreshed with **Auto Detect Package**.
+4. Add font files.
+5. Click **Generate** (fixed at the bottom action bar).
 
-1. Enter the **Font Class Name**.
-2. Enter the **Package Name** (optional).
-3. Select the **Module**.
-4. Add your **Font Files**.
+## Add Font Files
 
----
+- Drag & drop into the dashed drop area.
+- Drag & drop directly into each field.
+- Use the folder button in each field.
+- Import from downloaded ZIP.
+- Import from Google Fonts (**Beta**).
 
-### Ways to Add Font Files
+### Keyword-Based Matching
 
-- **Drag and drop** font files into the dashed box area.
+When importing multiple files, Font Helper maps files to weight/style by filename keywords (case-insensitive).
 
-When dragging multiple files, the plugin will detect each file based on its name.  
-File name detection is **case-insensitive**, and it uses specific keywords to determine which font weight and style each file represents.
+Customize matching rules in:
+- `Settings > Tools > Font Helper Settings`
 
-You can customize the detection keywords in  
-`Settings > Tools > Font Helper Settings`.
-![fh_setting](./screenshot/02.setting.png)
+![settings](./screenshot/02.setting.png)
 
-| Font Weight | Normal Keyword     | Italic Keyword        |
-|-------------|--------------------|------------------------|
-| Thin        | `-thin`            | `-thinitalic`          |
-| ExtraLight  | `-extralight`      | `-extralightitalic`    |
-| Light       | `-light`           | `-lightitalic`         |
-| Regular     | `-regular`         | `-italic`              |
-| Medium      | `-medium`          | `-mediumitalic`        |
-| SemiBold    | `-semibold`        | `-semibolditalic`      |
-| Bold        | `-bold`            | `-bolditalic`          |
-| ExtraBold   | `-extrabold`       | `-extrabolditalic`     |
-| Black       | `-black`           | `-blackitalic`         |
+| Font Weight | Normal Keyword  | Italic Keyword       |
+|---|---|---|
+| Thin | `-thin` | `-thinitalic` |
+| ExtraLight | `-extralight` | `-extralightitalic` |
+| Light | `-light` | `-lightitalic` |
+| Regular | `-regular` | `-italic` |
+| Medium | `-medium` | `-mediumitalic` |
+| SemiBold | `-semibold` | `-semibolditalic` |
+| Bold | `-bold` | `-bolditalic` |
+| ExtraBold | `-extrabold` | `-extrabolditalic` |
+| Black | `-black` | `-blackitalic` |
 
-- You can also drag and drop files directly into the corresponding text fields.
-- Or, click the folder icon next to each field to select files manually.
+If multiple files match the same slot, Font Helper opens a conflict dialog with **Prev/Next** slot navigation so you can choose one file per slot.
 
----
+## Google Fonts (Beta)
 
-### Output Paths
+Google import uses `download/list?family=...` metadata first, then downloads only selected files.
 
-|                 | Android Path                                           | Compose Multiplatform Path                             |
-|-----------------|--------------------------------------------------------|--------------------------------------------------------|
-| **Class File**  | `./[module]/src/main/[java or kotlin]/[packageName]`   | `./[module]/src/commonMain/kotlin/[packageName]`       |
-| **Font Files**  | `./[module]/src/main/res/font`                         | `./[module]/src/commonMain/composeResources/font`       |
+- Marked as **experimental** in UI.
+- Manifest list is cached temporarily to reduce repeated requests.
+- Downloaded files are cached and reusable.
+- **Clear Cache** removes downloaded cache files and cached manifests.
 
----
+## Output Paths
 
-### Example Output
+| Output | Android | Compose Multiplatform |
+|---|---|---|
+| Class File | `./[module]/src/main/[java|kotlin]/[packageName]` | `./[module]/src/commonMain/kotlin/[packageName]` |
+| Font Files | `./[module]/src/main/res/font` | `./[module]/src/commonMain/composeResources/font` |
 
-![fh_result](https://user-images.githubusercontent.com/63912638/234794163-d9f57816-0c7e-42a8-b16b-a1d45b6edd18.png)
+## Generated Naming
 
-Click the **Add** button to generate the font class and copy the font files.
+- Font file: `(className)_(weight)[_italic].ttf`
+- Class file: `[ClassName].kt`
 
-- **Font file name format:**  
-  `(ClassName)_(FontWeight)_(FontType).ttf`
-
-- **Class file name format:**  
-  `[ClassName].kt`
-
----
+After generation, the plugin refreshes project files so new files appear immediately.

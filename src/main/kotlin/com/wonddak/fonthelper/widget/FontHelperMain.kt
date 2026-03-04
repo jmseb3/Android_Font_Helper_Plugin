@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FolderOpen
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +63,7 @@ import java.io.File
 fun FontHelperMain(
     project: Project,
     moduleList: List<ModuleData>,
+    onRefreshModules: () -> Unit,
 ) {
     WidgetTheme {
         Surface(
@@ -168,7 +170,13 @@ fun FontHelperMain(
                 )
                 if (moduleList.isNotEmpty()) {
                     LaunchedEffect(moduleList) {
-                        fontData = fontData.copy(selectedModule = moduleList.first())
+                        val selected = fontData.selectedModule
+                        val selectedStillExists = selected != null && moduleList.any {
+                            it.path == selected.path && it.isCMP == selected.isCMP
+                        }
+                        if (!selectedStillExists) {
+                            fontData = fontData.copy(selectedModule = moduleList.first())
+                        }
                     }
                     LaunchedEffect(fontData.selectedModule) {
                         val module = fontData.selectedModule ?: return@LaunchedEffect
@@ -198,8 +206,14 @@ fun FontHelperMain(
                             )
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
+                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                             ) {
+                                TextButton(
+                                    onClick = onRefreshModules
+                                ) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                    Text(" Refresh Modules")
+                                }
                                 TextButton(
                                     onClick = {
                                         scope.launch {
@@ -393,11 +407,24 @@ fun FontHelperMain(
                         shape = MaterialTheme.shapes.medium,
                         elevation = 1.dp
                     ) {
-                        Text(
-                            text = "No module found. Wait for project sync to finish and reopen Font Helper.",
+                        Column(
                             modifier = Modifier.padding(12.dp),
-                            style = MaterialTheme.typography.body2
-                        )
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "No module found. If build/sync just finished, click refresh.",
+                                style = MaterialTheme.typography.body2
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(onClick = onRefreshModules) {
+                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                    Text(" Refresh")
+                                }
+                            }
+                        }
                     }
                 }
 

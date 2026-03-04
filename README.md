@@ -13,9 +13,12 @@ Search **Font Helper** in JetBrains Marketplace, or install from:
 
 ## Open Tool Window
 
-![open](./screenshot/01.open_tool.png)
+![main-setup](./screenshot/01_1_tool_main_setup.png)
 
 Open the **FontHelper (FF)** tool window from the IDE right side.
+The main screen is now split into **Setup** and **Fonts** tabs to reduce long scrolling.
+
+![main-fonts](./screenshot/01_2_tool_main_fonts.png)
 
 ## Quick Start
 
@@ -41,7 +44,7 @@ When importing multiple files, Font Helper maps files to weight/style by filenam
 Customize matching rules in:
 - `Settings > Tools > Font Helper Settings`
 
-![settings](./screenshot/02.setting.png)
+![settings](./screenshot/03_setting.png)
 
 | Font Weight | Normal Keyword  | Italic Keyword       |
 |---|---|---|
@@ -56,14 +59,15 @@ Customize matching rules in:
 | Black | `-black` | `-blackitalic` |
 
 If multiple files match the same slot, Font Helper opens a conflict dialog with **Prev/Next** slot navigation so you can choose one file per slot.
-![duplicate](./screenshot/04.duplicate_font.png)
+![google-duplicate](./screenshot/02_2_from_google_fonts_duplicate_dialog.png)
 
 
 ## Google Fonts (Beta)
 
 Google import uses `download/list?family=...` metadata first, then downloads only selected files.
 
-![from_google](./screenshot/03.from_google_fonts.png)
+![google-dialog](./screenshot/02_1_from_google_fonts_dialog.png)
+![google-result](./screenshot/02_3_from_google_fonts_result.png)
 
 - Marked as **experimental** in UI.
 - Manifest list is cached temporarily to reduce repeated requests.

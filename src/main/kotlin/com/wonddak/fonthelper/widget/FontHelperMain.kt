@@ -2,7 +2,10 @@ package com.wonddak.fonthelper.widget
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,10 +14,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
-import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.RadioButton
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,7 +29,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.rememberDialogState
 import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
@@ -34,7 +42,9 @@ import com.wonddak.fonthelper.setting.FontMatchSettingsService
 import com.wonddak.fonthelper.setting.FontMatchSettingsState
 import com.wonddak.fonthelper.theme.WidgetTheme
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.GoogleFontFileRef
 import com.wonddak.fonthelper.util.GoogleFontsUtil
+import com.wonddak.fonthelper.util.PackageNameResolver
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -61,6 +71,9 @@ fun FontHelperMain(
             var showDownloadedZipPicker by remember { mutableStateOf(false) }
             var downloadingGoogleFont by remember { mutableStateOf(false) }
             var googleImportMessage by remember { mutableStateOf<String?>(null) }
+            var conflictSelectionState by remember { mutableStateOf<ImportConflictSelectionState?>(null) }
+            var googleFileSelectionState by remember { mutableStateOf<GoogleFileSelectionState?>(null) }
+            var packageNameTouchedByUser by rememberSaveable { mutableStateOf(false) }
 
             FilePicker(
                 show = showDownloadedZipPicker,
@@ -76,12 +89,30 @@ fun FontHelperMain(
                     try {
                         val downloaded = GoogleFontsUtil.importFontsFromZip(File(pickedPath))
                         val settings = FontMatchSettingsService.getInstance().state
-                        val (updated, matched) = applyImportedFonts(fontData, downloaded, settings)
+                        val analysis = analyzeImportedFonts(downloaded, settings)
+                        val autoAssignments = analysis.groups
+                            .filterValues { it.size == 1 }
+                            .mapValues { it.value.first() }
+                        var updated = applyImportedFonts(fontData, autoAssignments)
                         fontData = updated
-                        googleImportMessage = if (matched == 0) {
-                            "ZIP imported, but no variants matched current keywords."
+
+                        val conflicts = analysis.groups
+                            .filterValues { it.size > 1 }
+                            .entries
+                            .sortedBy { it.key.displayText() }
+                            .map { (slot, files) -> ImportConflict(slot, files.sortedBy { it.name.lowercase() }) }
+
+                        if (analysis.matchedCount == 0) {
+                            googleImportMessage = "ZIP imported, but no variants matched current keywords."
+                        } else if (conflicts.isEmpty()) {
+                            googleImportMessage = "ZIP imported. ${analysis.matchedCount} variants mapped."
                         } else {
-                            "ZIP imported. $matched variants mapped."
+                            conflictSelectionState = ImportConflictSelectionState(
+                                sourceLabel = "ZIP",
+                                currentFontData = updated,
+                                conflicts = conflicts
+                            )
+                            googleImportMessage = "ZIP imported. ${autoAssignments.size} auto-mapped, ${conflicts.size} conflicts need selection."
                         }
                     } catch (e: Exception) {
                         googleImportMessage = "ZIP import failed: ${e.message ?: "Unknown error"}"
@@ -91,13 +122,15 @@ fun FontHelperMain(
                 }
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(14.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(14.dp)
+                        .padding(bottom = 86.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                 Text(
                     text = "Font Helper",
                     style = MaterialTheme.typography.h6
@@ -118,12 +151,19 @@ fun FontHelperMain(
                     title = "Package Name",
                     text = fontData.packageName,
                     onValueChange = {
+                        packageNameTouchedByUser = true
                         fontData = fontData.copy(packageName = it)
                     }
                 )
                 if (moduleList.isNotEmpty()) {
                     LaunchedEffect(moduleList) {
                         fontData = fontData.copy(selectedModule = moduleList.first())
+                    }
+                    LaunchedEffect(fontData.selectedModule) {
+                        val module = fontData.selectedModule ?: return@LaunchedEffect
+                        if (packageNameTouchedByUser && fontData.packageName.isNotBlank()) return@LaunchedEffect
+                        val resolvedPackage = PackageNameResolver.resolve(module) ?: return@LaunchedEffect
+                        fontData = fontData.copy(packageName = resolvedPackage)
                     }
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -145,6 +185,23 @@ fun FontHelperMain(
                                     fontData = fontData.copy(selectedModule = module)
                                 }
                             )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        scope.launch {
+                                            val module = fontData.selectedModule ?: return@launch
+                                            val resolvedPackage = PackageNameResolver.resolve(module) ?: return@launch
+                                            fontData = fontData.copy(packageName = resolvedPackage)
+                                            packageNameTouchedByUser = false
+                                        }
+                                    }
+                                ) {
+                                    Text("Auto Detect Package")
+                                }
+                            }
 
                             if (fontData.selectedModule?.isCMP == false) {
                                 LabelContent(
@@ -193,21 +250,87 @@ fun FontHelperMain(
                                 text = "Font Files",
                                 style = MaterialTheme.typography.subtitle1
                             )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                            ) {
-                                Button(
-                                    onClick = { showDownloadedZipPicker = true },
-                                    enabled = !downloadingGoogleFont
-                                ) {
-                                    Text("Import Downloaded ZIP")
-                                }
-                                Button(
-                                    onClick = { showGoogleFontsDialog = true },
-                                    enabled = !downloadingGoogleFont
-                                ) {
-                                    Text("Import from Google Fonts")
+                            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                                val narrow = maxWidth < 920.dp
+                                if (narrow) {
+                                    Column(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    downloadingGoogleFont = true
+                                                    googleImportMessage = "Clearing downloaded font cache..."
+                                                    try {
+                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
+                                                        fontData = removeManagedDownloadedPaths(fontData)
+                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
+                                                    } catch (e: Exception) {
+                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
+                                                    } finally {
+                                                        downloadingGoogleFont = false
+                                                    }
+                                                }
+                                            },
+                                            enabled = !downloadingGoogleFont,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Clear Download Cache")
+                                        }
+                                        Button(
+                                            onClick = { showDownloadedZipPicker = true },
+                                            enabled = !downloadingGoogleFont,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Import Downloaded ZIP")
+                                        }
+                                        Button(
+                                            onClick = { showGoogleFontsDialog = true },
+                                            enabled = !downloadingGoogleFont,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("Import from Google Fonts (Experimental)")
+                                        }
+                                    }
+                                } else {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                                    ) {
+                                        Button(
+                                            onClick = {
+                                                scope.launch {
+                                                    downloadingGoogleFont = true
+                                                    googleImportMessage = "Clearing downloaded font cache..."
+                                                    try {
+                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
+                                                        fontData = removeManagedDownloadedPaths(fontData)
+                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
+                                                    } catch (e: Exception) {
+                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
+                                                    } finally {
+                                                        downloadingGoogleFont = false
+                                                    }
+                                                }
+                                            },
+                                            enabled = !downloadingGoogleFont
+                                        ) {
+                                            Text("Clear Download Cache")
+                                        }
+                                        Button(
+                                            onClick = { showDownloadedZipPicker = true },
+                                            enabled = !downloadingGoogleFont
+                                        ) {
+                                            Text("Import Downloaded ZIP")
+                                        }
+                                        Button(
+                                            onClick = { showGoogleFontsDialog = true },
+                                            enabled = !downloadingGoogleFont
+                                        ) {
+                                            Text("Import from Google Fonts (Experimental)")
+                                        }
+                                    }
                                 }
                             }
                             if (googleImportMessage != null) {
@@ -239,31 +362,14 @@ fun FontHelperMain(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
                             ) {
-                                Button(
-                                    onClick = {
-                                        fontData = fontData.clearAllFont()
-                                    },
-                                    enabled = fontData.totalFontPath.isNotEmpty()
-                                ) {
-                                    Text("Clear All Fonts")
-                                }
+                                Text(
+                                    text = "Google Fonts import is experimental.",
+                                    style = MaterialTheme.typography.caption
+                                )
                             }
                         }
                     }
 
-                    Divider()
-                    Button(
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            FontUtil.makeFontFamilyFile(
-                                project = project,
-                                fontData = fontData
-                            )
-                        },
-                        enabled = fontData.enabledOk()
-                    ) {
-                        Text("Generate FontFamily")
-                    }
                 } else {
                     Surface(
                         modifier = Modifier.fillMaxWidth(),
@@ -285,16 +391,55 @@ fun FontHelperMain(
                             showGoogleFontsDialog = false
                             scope.launch {
                                 downloadingGoogleFont = true
-                                googleImportMessage = "Downloading \"$family\"..."
+                                googleImportMessage = "Loading \"$family\" file list..."
                                 try {
-                                    val downloaded = GoogleFontsUtil.downloadFamilyFonts(family)
                                     val settings = FontMatchSettingsService.getInstance().state
-                                    val (updated, matched) = applyImportedFonts(fontData, downloaded, settings)
-                                    fontData = updated
-                                    googleImportMessage = if (matched == 0) {
-                                        "\"$family\" downloaded, but no variants matched current keywords."
+                                    val refs = GoogleFontsUtil.fetchFamilyFontFileRefs(family)
+                                    val slotCandidates = refs
+                                        .mapNotNull { ref ->
+                                            val shortName = ref.filename.substringAfterLast('/').substringAfterLast('\\')
+                                            val match = settings.checkType(shortName.lowercase()) ?: return@mapNotNull null
+                                            FontSlotKey(isItalic = match.first, weight = match.second) to ref
+                                        }
+                                        .groupBy(
+                                            keySelector = { it.first },
+                                            valueTransform = { it.second }
+                                        )
+                                        .toSortedMap(compareBy<FontSlotKey> { it.isItalic }.thenBy { it.weight })
+
+                                    if (slotCandidates.isEmpty()) {
+                                        googleImportMessage =
+                                            "\"$family\" list loaded, but no variants matched current keywords."
                                     } else {
-                                        "\"$family\" imported. $matched variants mapped."
+                                        val normalizedBySlot = slotCandidates.mapValues { (_, list) ->
+                                            list.distinctBy { it.url }.sortedBy { it.filename.lowercase() }
+                                        }
+                                        val autoSelectedBySlot = normalizedBySlot
+                                            .filterValues { it.size == 1 }
+                                            .mapValues { (_, refsBySlot) -> refsBySlot.first() }
+                                        val conflictCandidatesBySlot = normalizedBySlot
+                                            .filterValues { it.size > 1 }
+
+                                        if (conflictCandidatesBySlot.isEmpty()) {
+                                            val downloadedByUrl = GoogleFontsUtil.downloadFamilyFontRefs(
+                                                family = family,
+                                                refs = autoSelectedBySlot.values.distinctBy { it.url }
+                                            )
+                                            val assignments = autoSelectedBySlot.mapNotNull { (slot, ref) ->
+                                                downloadedByUrl[ref.url]?.let { slot to it }
+                                            }.toMap()
+                                            fontData = applyImportedFonts(fontData, assignments)
+                                            googleImportMessage =
+                                                "\"$family\" imported. ${assignments.size} variants mapped."
+                                        } else {
+                                            googleFileSelectionState = GoogleFileSelectionState(
+                                                family = family,
+                                                autoSelectedBySlot = autoSelectedBySlot,
+                                                conflictCandidatesBySlot = conflictCandidatesBySlot
+                                            )
+                                            googleImportMessage =
+                                                "\"$family\" list loaded. ${autoSelectedBySlot.size} auto-selected, choose ${conflictCandidatesBySlot.size} conflict slots."
+                                        }
                                     }
                                 } catch (e: Exception) {
                                     googleImportMessage = "Google Fonts import failed: ${e.message ?: "Unknown error"}"
@@ -306,29 +451,377 @@ fun FontHelperMain(
                     )
                 }
 
+                googleFileSelectionState?.let { state ->
+                    GoogleFileSelectionDialog(
+                        state = state,
+                        onDismiss = { googleFileSelectionState = null },
+                        onApply = { selectedBySlot ->
+                            googleFileSelectionState = null
+                            scope.launch {
+                                downloadingGoogleFont = true
+                                googleImportMessage = "Downloading selected files from \"${state.family}\"..."
+                                try {
+                                    val allSelections = state.autoSelectedBySlot + selectedBySlot
+                                    val selectedRefs = allSelections.values.distinctBy { it.url }
+                                    val downloadedByUrl = GoogleFontsUtil.downloadFamilyFontRefs(
+                                        family = state.family,
+                                        refs = selectedRefs
+                                    )
+                                    val assignments = allSelections.mapNotNull { (slot, ref) ->
+                                        downloadedByUrl[ref.url]?.let { slot to it }
+                                    }.toMap()
+
+                                    fontData = applyImportedFonts(fontData, assignments)
+                                    googleImportMessage =
+                                        "\"${state.family}\" imported. ${assignments.size} variants mapped."
+                                } catch (e: Exception) {
+                                    googleImportMessage =
+                                        "Google Fonts download failed: ${e.message ?: "Unknown error"}"
+                                } finally {
+                                    downloadingGoogleFont = false
+                                }
+                            }
+                        }
+                    )
+                }
+
+                conflictSelectionState?.let { state ->
+                    ImportConflictDialog(
+                        state = state,
+                        onDismiss = { conflictSelectionState = null },
+                        onApply = { selections ->
+                            fontData = applyImportedFonts(state.currentFontData, selections)
+                            googleImportMessage =
+                                "${state.sourceLabel} conflict selections applied. ${selections.size} slots updated."
+                            conflictSelectionState = null
+                        }
+                    )
+                }
+
+                }
+
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth(),
+                    elevation = 8.dp
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Button(
+                            onClick = {
+                                fontData = fontData.clearAllFont()
+                            },
+                            enabled = fontData.totalFontPath.isNotEmpty()
+                        ) {
+                            Text("Clear All Fonts")
+                        }
+                        Button(
+                            onClick = {
+                                FontUtil.makeFontFamilyFile(
+                                    project = project,
+                                    fontData = fontData
+                                )
+                            },
+                            enabled = moduleList.isNotEmpty() && fontData.enabledOk()
+                        ) {
+                            Text("Generate FontFamily")
+                        }
+                    }
+                }
+
             }
         }
     }
 }
 
-private fun applyImportedFonts(
-    current: FontData,
-    files: List<File>,
-    settings: FontMatchSettingsState
-): Pair<FontData, Int> {
-    var updated = current
-    var matched = 0
+@Composable
+private fun GoogleFileSelectionDialog(
+    state: GoogleFileSelectionState,
+    onDismiss: () -> Unit,
+    onApply: (Map<FontSlotKey, GoogleFontFileRef>) -> Unit
+) {
+    val conflictSlots = remember(state) { state.conflictCandidatesBySlot.keys.toList() }
+    val initial = remember(state) { state.conflictCandidatesBySlot.mapValues { (_, refs) -> refs.first() } }
+    var selections by remember(state) { mutableStateOf(initial) }
+    var currentIndex by remember(state) { mutableStateOf(0) }
 
-    files.forEach { file ->
-        val fileName = file.name.lowercase()
-        settings.checkType(fileName)?.let { (isItalic, weight) ->
-            updated = if (isItalic) {
-                updated.updateItalicFont(weight, file.absolutePath)
-            } else {
-                updated.updateNormalFont(weight, file.absolutePath)
+    DialogWindow(
+        onCloseRequest = onDismiss,
+        title = "Select Google Fonts Files",
+        state = rememberDialogState(size = DpSize(760.dp, 520.dp))
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "\"${state.family}\" has duplicate matches. Select one file only for conflict slots.",
+                    style = MaterialTheme.typography.body2
+                )
+                Text(
+                    text = "${state.autoSelectedBySlot.size} slots were auto-selected.",
+                    style = MaterialTheme.typography.caption
+                )
+                if (conflictSlots.isNotEmpty()) {
+                    val slot = conflictSlots[currentIndex]
+                    val refs = state.conflictCandidatesBySlot[slot].orEmpty()
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = { if (currentIndex > 0) currentIndex -= 1 },
+                            enabled = currentIndex > 0
+                        ) { Text("Prev") }
+                        Text(
+                            text = "${currentIndex + 1} / ${conflictSlots.size}",
+                            style = MaterialTheme.typography.caption
+                        )
+                        TextButton(
+                            onClick = { if (currentIndex < conflictSlots.lastIndex) currentIndex += 1 },
+                            enabled = currentIndex < conflictSlots.lastIndex
+                        ) { Text("Next") }
+                    }
+
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        elevation = 1.dp,
+                        shape = MaterialTheme.shapes.small
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = slot.displayText(),
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 240.dp)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                refs.forEach { ref ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = selections[slot] == ref,
+                                            onClick = {
+                                                selections = selections + (slot to ref)
+                                                if (currentIndex < conflictSlots.lastIndex) {
+                                                    currentIndex += 1
+                                                }
+                                            }
+                                        )
+                                        Text(
+                                            text = ref.filename.substringAfterLast('/').substringAfterLast('\\'),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = { onApply(selections) },
+                        enabled = selections.size == state.conflictCandidatesBySlot.size
+                    ) {
+                        Text("Download Selected")
+                    }
+                }
             }
-            matched += 1
         }
     }
-    return updated to matched
+}
+
+@Composable
+private fun ImportConflictDialog(
+    state: ImportConflictSelectionState,
+    onDismiss: () -> Unit,
+    onApply: (Map<FontSlotKey, File>) -> Unit
+) {
+    val initialSelection = remember(state) {
+        state.conflicts.associate { it.slot to it.candidates.first() }
+    }
+    var selections by remember(state) { mutableStateOf(initialSelection) }
+
+    DialogWindow(
+        onCloseRequest = onDismiss,
+        title = "Resolve Font Type Conflicts",
+        state = rememberDialogState(size = DpSize(720.dp, 560.dp))
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "Multiple files matched the same type. Select one file per slot.",
+                    style = MaterialTheme.typography.body2
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    state.conflicts.forEach { conflict ->
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = 1.dp,
+                            shape = MaterialTheme.shapes.small
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = conflict.slot.displayText(),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                                conflict.candidates.forEach { candidate ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            selected = selections[conflict.slot] == candidate,
+                                            onClick = {
+                                                selections = selections + (conflict.slot to candidate)
+                                            }
+                                        )
+                                        Text(
+                                            text = candidate.name,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Button(
+                        onClick = { onApply(selections) },
+                        enabled = selections.size == state.conflicts.size
+                    ) {
+                        Text("Apply")
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun analyzeImportedFonts(
+    files: List<File>,
+    settings: FontMatchSettingsState
+): ImportAnalysis {
+    val groups = linkedMapOf<FontSlotKey, MutableList<File>>()
+    var matchedCount = 0
+    files.forEach { file ->
+        val fileName = file.name.lowercase()
+        val match = settings.checkType(fileName) ?: return@forEach
+        val key = FontSlotKey(isItalic = match.first, weight = match.second)
+        groups.getOrPut(key) { mutableListOf() }.add(file)
+        matchedCount += 1
+    }
+    return ImportAnalysis(
+        groups = groups.mapValues { it.value.toList() },
+        matchedCount = matchedCount
+    )
+}
+
+private fun applyImportedFonts(
+    current: FontData,
+    assignments: Map<FontSlotKey, File>
+): FontData {
+    var updated = current
+    assignments.forEach { (slot, file) ->
+        updated = if (slot.isItalic) {
+            updated.updateItalicFont(slot.weight, file.absolutePath)
+        } else {
+            updated.updateNormalFont(slot.weight, file.absolutePath)
+        }
+    }
+    return updated
+}
+
+private fun removeManagedDownloadedPaths(current: FontData): FontData {
+    val cleanedNormal = current.normalFontPath.map { font ->
+        if (font != null && GoogleFontsUtil.isManagedDownloadedFile(font.path)) null else font
+    }
+    val cleanedItalic = current.italicFontPath.map { font ->
+        if (font != null && GoogleFontsUtil.isManagedDownloadedFile(font.path)) null else font
+    }
+    return current.copy(
+        normalFontPath = cleanedNormal,
+        italicFontPath = cleanedItalic
+    )
+}
+
+private data class GoogleFileSelectionState(
+    val family: String,
+    val autoSelectedBySlot: Map<FontSlotKey, GoogleFontFileRef>,
+    val conflictCandidatesBySlot: Map<FontSlotKey, List<GoogleFontFileRef>>
+)
+
+private data class ImportAnalysis(
+    val groups: Map<FontSlotKey, List<File>>,
+    val matchedCount: Int
+)
+
+private data class ImportConflictSelectionState(
+    val sourceLabel: String,
+    val currentFontData: FontData,
+    val conflicts: List<ImportConflict>
+)
+
+private data class ImportConflict(
+    val slot: FontSlotKey,
+    val candidates: List<File>
+)
+
+private data class FontSlotKey(
+    val isItalic: Boolean,
+    val weight: Int
+) {
+    fun displayText(): String {
+        val style = if (isItalic) "Italic" else "Normal"
+        return "${FontUtil.getWeightTextByIndex(weight)} $style"
+    }
 }

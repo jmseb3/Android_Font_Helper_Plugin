@@ -3,11 +3,10 @@ package com.wonddak.fonthelper.widget
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
@@ -36,64 +35,103 @@ fun FontTable(
     updateNormalFontList: (Int, String) -> Unit,
     updateItalicFontList: (Int, String) -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val labelModifier = Modifier.width(96.dp)
-        val contentModifier = Modifier.width(240.dp)
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(
-                modifier = labelModifier
-            )
-            Text(
-                text = FontUtil.NORMAL,
-                modifier = contentModifier,
-                textAlign = TextAlign.Center,
-                fontStyle = FontStyle.Normal,
-                style = MaterialTheme.typography.subtitle2
-            )
-            Text(
-                text = FontUtil.ITALIC,
-                modifier = contentModifier,
-                textAlign = TextAlign.Center,
-                fontStyle = FontStyle.Italic,
-                style = MaterialTheme.typography.subtitle2
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 860.dp
+        val gap = 12.dp
 
-            )
-        }
-        repeat(9) { index ->
+        if (!compact) {
+            val labelWidth = 100.dp
+            val contentWidth = ((maxWidth - labelWidth - (gap * 2)) / 2).coerceAtLeast(180.dp)
             Row(
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
+                horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Spacer(modifier = Modifier.width(labelWidth))
                 Text(
-                    text = FontUtil.getWeightTextByIndex(index),
-                    modifier = labelModifier,
+                    text = FontUtil.NORMAL,
+                    modifier = Modifier.width(contentWidth),
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight((index + 1) * 100),
-                    style = MaterialTheme.typography.body2
+                    fontStyle = FontStyle.Normal,
+                    style = MaterialTheme.typography.subtitle2
                 )
-                FontBox(
-                    modifier = contentModifier,
-                    path = normalFontList[index]?.path ?: "",
-                    onNewPath = {
-                        updateNormalFontList(index, it)
+                Text(
+                    text = FontUtil.ITALIC,
+                    modifier = Modifier.width(contentWidth),
+                    textAlign = TextAlign.Center,
+                    fontStyle = FontStyle.Italic,
+                    style = MaterialTheme.typography.subtitle2
+                )
+            }
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                repeat(9) { index ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(gap),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = FontUtil.getWeightTextByIndex(index),
+                            modifier = Modifier.width(labelWidth),
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight((index + 1) * 100),
+                            style = MaterialTheme.typography.body2
+                        )
+                        FontBox(
+                            modifier = Modifier.width(contentWidth),
+                            path = normalFontList[index]?.path ?: "",
+                            onNewPath = { updateNormalFontList(index, it) }
+                        )
+                        FontBox(
+                            modifier = Modifier.width(contentWidth),
+                            path = italicFontList[index]?.path ?: "",
+                            onNewPath = { updateItalicFontList(index, it) }
+                        )
                     }
-                )
-                FontBox(
-                    modifier = contentModifier,
-                    path = italicFontList[index]?.path ?: "",
-                    onNewPath = {
-                        updateItalicFontList(index, it)
+                }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                repeat(9) { index ->
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        elevation = 1.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = FontUtil.getWeightTextByIndex(index),
+                                fontWeight = FontWeight((index + 1) * 100),
+                                style = MaterialTheme.typography.body2
+                            )
+                            Text(
+                                text = FontUtil.NORMAL,
+                                style = MaterialTheme.typography.caption
+                            )
+                            FontBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                path = normalFontList[index]?.path ?: "",
+                                onNewPath = { updateNormalFontList(index, it) }
+                            )
+                            Text(
+                                text = FontUtil.ITALIC,
+                                style = MaterialTheme.typography.caption
+                            )
+                            FontBox(
+                                modifier = Modifier.fillMaxWidth(),
+                                path = italicFontList[index]?.path ?: "",
+                                onNewPath = { updateItalicFontList(index, it) }
+                            )
+                        }
                     }
-                )
+                }
             }
         }
     }

@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.FontType
@@ -111,7 +112,28 @@ object FontUtil {
                 //Open Class File
                 FileEditorManager.getInstance(project).openFile(psiFile.virtualFile, true)
             }
+
+            // Refresh project view/index after generated sources and copied fonts are added.
+            reloadProject(project, fontData)
         }
+    }
+
+    private fun reloadProject(project: Project, fontData: FontData) {
+        val projectBase = project.basePath
+        if (!projectBase.isNullOrBlank()) {
+            LocalFileSystem.getInstance().findFileByPath(projectBase)?.let {
+                VfsUtil.markDirtyAndRefresh(true, true, true, it)
+            }
+        }
+
+        val moduleClassPath = fontData.selectedModule?.path.orEmpty()
+        if (moduleClassPath.isNotBlank()) {
+            LocalFileSystem.getInstance().findFileByPath(moduleClassPath)?.let {
+                VfsUtil.markDirtyAndRefresh(true, true, true, it)
+            }
+        }
+
+        VirtualFileManager.getInstance().asyncRefresh(null)
     }
 
     private fun makeContentString(fontData: FontData): String {

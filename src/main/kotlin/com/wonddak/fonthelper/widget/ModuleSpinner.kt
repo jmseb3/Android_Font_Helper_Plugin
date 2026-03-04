@@ -1,15 +1,17 @@
 package com.wonddak.fonthelper.widget
 
-
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Text
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExposedDropdownMenuBox
 import androidx.compose.material.ExposedDropdownMenuDefaults
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import com.wonddak.fonthelper.model.ModuleData
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -34,8 +36,10 @@ fun ModuleSpinner(
                 readOnly = true,
                 value = selectedModule?.name ?: "",
                 onValueChange = {},
-                modifier = Modifier,
+                modifier = Modifier.fillMaxWidth(),
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandStatus) },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.body2,
                 colors = ExposedDropdownMenuDefaults.textFieldColors(
                     focusedLabelColor = Color.Transparent,
                     unfocusedLabelColor = Color.Transparent,
@@ -54,7 +58,11 @@ fun ModuleSpinner(
                             expandStatus = false
                         },
                         content = {
-                            Text(text = module.name)
+                            Text(
+                                text = module.name,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     )
                 }

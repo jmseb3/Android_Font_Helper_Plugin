@@ -1,14 +1,15 @@
 package com.wonddak.fonthelper.widget
 
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 
 @Composable
 fun InputRow(
@@ -23,6 +24,7 @@ fun InputRow(
         TextField(
             value = text,
             onValueChange = onValueChange,
+            modifier = Modifier.fillMaxWidth(),
             placeholder = {
                 Text(title)
             },

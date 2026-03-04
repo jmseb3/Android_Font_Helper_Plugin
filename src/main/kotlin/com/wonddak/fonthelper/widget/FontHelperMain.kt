@@ -1,8 +1,9 @@
 package com.wonddak.fonthelper.widget
 
-import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -11,12 +12,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.Checkbox
 import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -37,8 +35,10 @@ fun FontHelperMain(
     project: Project,
     moduleList: List<ModuleData>,
 ) {
-    WidgetTheme(darkTheme = true) {
-        Surface() {
+    WidgetTheme {
+        Surface(
+            modifier = Modifier.fillMaxSize()
+        ) {
             var fontData by rememberSaveable {
                 mutableStateOf(
                     FontData(
@@ -51,10 +51,19 @@ fun FontHelperMain(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp)
+                    .padding(14.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(15.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                Text(
+                    text = "Font Helper",
+                    style = MaterialTheme.typography.h6
+                )
+                Text(
+                    text = "Generate Compose FontFamily and copy font resources to your module.",
+                    style = MaterialTheme.typography.caption
+                )
+
                 InputRow(
                     title = "Font Class Name",
                     text = fontData.fileName,
@@ -70,66 +79,115 @@ fun FontHelperMain(
                     }
                 )
                 if (moduleList.isNotEmpty()) {
-                    LaunchedEffect(true) {
+                    LaunchedEffect(moduleList) {
                         fontData = fontData.copy(selectedModule = moduleList.first())
                     }
-                    ModuleSpinner(
-                        moduleList = moduleList,
-                        selectedModule = fontData.selectedModule,
-                        updateModule = { module ->
-                            fontData = fontData.copy(selectedModule = module)
-                        }
-                    )
-
-                    if (fontData.selectedModule?.isCMP == false) {
-                        LabelContent(
-                            "Use Kotlin Path"
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        elevation = 1.dp
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            Checkbox(
-                                checked = fontData.useKotlinPath,
-                                onCheckedChange = {
-                                    fontData = fontData.copy(useKotlinPath = it)
+                            Text(
+                                text = "Project Settings",
+                                style = MaterialTheme.typography.subtitle1
+                            )
+                            ModuleSpinner(
+                                moduleList = moduleList,
+                                selectedModule = fontData.selectedModule,
+                                updateModule = { module ->
+                                    fontData = fontData.copy(selectedModule = module)
                                 }
                             )
+
+                            if (fontData.selectedModule?.isCMP == false) {
+                                LabelContent(
+                                    "Use Kotlin Path"
+                                ) {
+                                    Checkbox(
+                                        checked = fontData.useKotlinPath,
+                                        onCheckedChange = {
+                                            fontData = fontData.copy(useKotlinPath = it)
+                                        }
+                                    )
+                                }
+                            }
+                            LabelContent("Class Path Preview") {
+                                val basePath = project.basePath
+                                val previewPath = if (basePath.isNullOrBlank()) {
+                                    fontData.previewClassPath()
+                                } else {
+                                    fontData.previewClassPath().replace(basePath, ".")
+                                }
+                                Text(
+                                    text = previewPath,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .background(
+                                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.06f),
+                                            shape = MaterialTheme.shapes.small
+                                        )
+                                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.caption
+                                )
+                            }
                         }
-                    }
-                    LabelContent("Class Path Preview") {
-                        Text(fontData.previewClassPath().replace(project.basePath!!, "."))
                     }
 
-                    DragDropFiles(
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        updateNormalFontList = { index, path ->
-                            fontData = fontData.updateNormalFont(index, path)
-                        },
-                        updateItalicFontList = { index, path ->
-                            fontData = fontData.updateItalicFont(index, path)
-                        }
-                    )
-                    FontTable(
-                        normalFontList = fontData.normalFontPath,
-                        italicFontList = fontData.italicFontPath,
-                        updateNormalFontList = { index, path ->
-                            fontData = fontData.updateNormalFont(index, path)
-                        },
-                        updateItalicFontList = { index, path ->
-                            fontData = fontData.updateItalicFont(index, path)
-                        }
-                    )
-                    Button(
-                        modifier = Modifier.fillMaxWidth(0.3f)
-                            .align(Alignment.End),
-                        onClick = {
-                            fontData = fontData.clearAllFont()
-                        },
-                        enabled = fontData.totalFontPath.isNotEmpty()
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        elevation = 1.dp
                     ) {
-                        Text("Clear All Font")
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Text(
+                                text = "Font Files",
+                                style = MaterialTheme.typography.subtitle1
+                            )
+                            DragDropFiles(
+                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                updateNormalFontList = { index, path ->
+                                    fontData = fontData.updateNormalFont(index, path)
+                                },
+                                updateItalicFontList = { index, path ->
+                                    fontData = fontData.updateItalicFont(index, path)
+                                }
+                            )
+                            FontTable(
+                                normalFontList = fontData.normalFontPath,
+                                italicFontList = fontData.italicFontPath,
+                                updateNormalFontList = { index, path ->
+                                    fontData = fontData.updateNormalFont(index, path)
+                                },
+                                updateItalicFontList = { index, path ->
+                                    fontData = fontData.updateItalicFont(index, path)
+                                }
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                Button(
+                                    onClick = {
+                                        fontData = fontData.clearAllFont()
+                                    },
+                                    enabled = fontData.totalFontPath.isNotEmpty()
+                                ) {
+                                    Text("Clear All Fonts")
+                                }
+                            }
+                        }
                     }
+
                     Divider()
                     Button(
-                        modifier = Modifier.fillMaxWidth(0.7f)
-                            .align(Alignment.Start),
+                        modifier = Modifier.fillMaxWidth(),
                         onClick = {
                             FontUtil.makeFontFamilyFile(
                                 project = project,
@@ -138,10 +196,20 @@ fun FontHelperMain(
                         },
                         enabled = fontData.enabledOk()
                     ) {
-                        Text("Add")
+                        Text("Generate FontFamily")
                     }
                 } else {
-                    Text("Can't find module in this project\n please wait finish Sync And re-open FontHelper")
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        elevation = 1.dp
+                    ) {
+                        Text(
+                            text = "No module found. Wait for project sync to finish and reopen Font Helper.",
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.body2
+                        )
+                    }
                 }
 
             }

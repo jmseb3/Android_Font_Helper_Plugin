@@ -82,21 +82,23 @@ object FontUtil {
         fontData: FontData
     ) {
         ApplicationManager.getApplication().runWriteAction {
-            val directory = VfsUtil.createDirectoryIfMissing(fontData.getSaveClassPath())
-            println("JJ1 $directory")
+            if (fontData.selectedModule == null) {
+                return@runWriteAction
+            }
+
             val classFileName = fontData.savingClassFileName
-            println("JJ2 $classFileName")
+            if (classFileName.isBlank()) {
+                return@runWriteAction
+            }
+
+            val directory = VfsUtil.createDirectoryIfMissing(fontData.getSaveClassPath())
+                ?: return@runWriteAction
 
             WriteAction.run<Throwable> {
-                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory!!)
-                println("JJ3 $psiDirectory")
+                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
                 var psiFile = psiDirectory.findFile(classFileName)
-                println("JJ4 $psiFile")
-                psiFile?.delete().also {
-                    println("JJ4 delete $it")
-                }
+                psiFile?.delete()
                 psiFile = psiDirectory.createFile(classFileName)
-                println("JJ5 $psiFile")
                 psiFile.virtualFile.setBinaryContent(makeContentString(fontData).toByteArray())
 
                 //Refresh Class File
@@ -164,9 +166,6 @@ object FontUtil {
         }
 
         return st.toString().trimIndent()
-            .also {
-                println(it)
-            }
     }
 
     private fun makeFontString(isCMPProject: Boolean, name: String, fontType: FontType): String {

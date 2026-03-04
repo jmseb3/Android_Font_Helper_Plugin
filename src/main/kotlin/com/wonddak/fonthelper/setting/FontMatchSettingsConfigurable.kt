@@ -5,14 +5,12 @@ import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.components.JBList
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import java.awt.Font
 import javax.swing.DefaultListModel
 import javax.swing.JComponent
 import javax.swing.JOptionPane
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
 import kotlin.reflect.KMutableProperty1
-import kotlin.reflect.KProperty1
 
 class FontMatchSettingsConfigurable : Configurable {
 
@@ -35,8 +33,7 @@ class FontMatchSettingsConfigurable : Configurable {
             }
 
             // 그룹화: thin / thinItalic 같은 이름끼리 묶기
-            val grouped = FontMatchSettingsState::class.members
-                .filterIsInstance<KProperty1<FontMatchSettingsState, List<String>>>()
+            val grouped = stateProperties
                 .sortedBy { it.name }
                 .groupBy { field ->
                     field.name.removeSuffix("ItalicKeywords").removeSuffix("Keywords")
@@ -125,14 +122,38 @@ class FontMatchSettingsConfigurable : Configurable {
     }
 
     private fun getFieldValue(fieldName: String): List<String> {
-        val property = FontMatchSettingsState::class.members
-            .firstOrNull { it.name == fieldName } as? KProperty1<FontMatchSettingsState, List<String>>
+        val property = statePropertiesByName[fieldName]
         return property?.get(settings) ?: emptyList()
     }
 
     private fun setFieldValue(fieldName: String, value: List<String>) {
-        val property = FontMatchSettingsState::class.members
-            .firstOrNull { it.name == fieldName } as? KMutableProperty1<FontMatchSettingsState, List<String>>
+        val property = statePropertiesByName[fieldName]
         property?.set(settings, value)
+    }
+
+    companion object {
+        private val stateProperties: List<KMutableProperty1<FontMatchSettingsState, List<String>>> = listOf(
+            FontMatchSettingsState::thinKeywords,
+            FontMatchSettingsState::extraLightKeywords,
+            FontMatchSettingsState::lightKeywords,
+            FontMatchSettingsState::regularKeywords,
+            FontMatchSettingsState::mediumKeywords,
+            FontMatchSettingsState::semiBoldKeywords,
+            FontMatchSettingsState::boldKeywords,
+            FontMatchSettingsState::extraBoldKeywords,
+            FontMatchSettingsState::blackKeywords,
+            FontMatchSettingsState::thinItalicKeywords,
+            FontMatchSettingsState::extraLightItalicKeywords,
+            FontMatchSettingsState::lightItalicKeywords,
+            FontMatchSettingsState::regularItalicKeywords,
+            FontMatchSettingsState::mediumItalicKeywords,
+            FontMatchSettingsState::semiBoldItalicKeywords,
+            FontMatchSettingsState::boldItalicKeywords,
+            FontMatchSettingsState::extraBoldItalicKeywords,
+            FontMatchSettingsState::blackItalicKeywords,
+        )
+
+        private val statePropertiesByName: Map<String, KMutableProperty1<FontMatchSettingsState, List<String>>> =
+            stateProperties.associateBy { it.name }
     }
 }

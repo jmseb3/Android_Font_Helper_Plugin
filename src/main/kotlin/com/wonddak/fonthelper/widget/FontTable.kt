@@ -3,12 +3,14 @@ package com.wonddak.fonthelper.widget
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.*
@@ -27,7 +29,6 @@ import com.darkrockstudios.libraries.mpfilepicker.FilePicker
 import com.wonddak.fonthelper.model.FontType
 import com.wonddak.fonthelper.util.FontUtil
 
-
 @Composable
 fun FontTable(
     normalFontList: List<FontType.Normal?>,
@@ -36,11 +37,14 @@ fun FontTable(
     updateItalicFontList: (Int, String) -> Unit,
 ) {
     Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        val labelModifier = Modifier.width(100.dp)
-        val contentModifier = Modifier.width(250.dp)
+        val labelModifier = Modifier.width(96.dp)
+        val contentModifier = Modifier.width(240.dp)
         Row(
             horizontalArrangement = Arrangement.spacedBy(20.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -52,13 +56,15 @@ fun FontTable(
                 text = FontUtil.NORMAL,
                 modifier = contentModifier,
                 textAlign = TextAlign.Center,
-                fontStyle = FontStyle.Normal
+                fontStyle = FontStyle.Normal,
+                style = MaterialTheme.typography.subtitle2
             )
             Text(
                 text = FontUtil.ITALIC,
                 modifier = contentModifier,
                 textAlign = TextAlign.Center,
-                fontStyle = FontStyle.Italic
+                fontStyle = FontStyle.Italic,
+                style = MaterialTheme.typography.subtitle2
 
             )
         }
@@ -71,7 +77,8 @@ fun FontTable(
                     text = FontUtil.getWeightTextByIndex(index),
                     modifier = labelModifier,
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight((index + 1) * 100)
+                    fontWeight = FontWeight((index + 1) * 100),
+                    style = MaterialTheme.typography.body2
                 )
                 FontBox(
                     modifier = contentModifier,
@@ -120,9 +127,9 @@ private fun FontBox(
                 val data = event.dragData()
                 if (data is DragData.FilesList) {
                     val filePaths = data.readFiles()
-                    val filePath = filePaths.first()
-                    if (filePath.endsWith("ttf") || filePath.endsWith("otf")) {
-                        onNewPath(filePath.replace("file:", ""))
+                    val filePath = filePaths.firstOrNull() ?: return false
+                    if (filePath.isSupportedFontFile()) {
+                        onNewPath(filePath.normalizeDroppedPath())
                         return true
                     }
                 }

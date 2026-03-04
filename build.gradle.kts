@@ -1,5 +1,10 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+val localIdePathProvider = providers.gradleProperty("localIdePath")
+val targetAndroidStudioVersionProvider = providers.gradleProperty("androidStudioVersion")
+    .orElse("2025.2.3.9")
 
 plugins {
     alias(libs.plugins.intellij.platform)
@@ -34,11 +39,14 @@ dependencies {
 
     intellijPlatform {
         // And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2024
-        androidStudio("2024.3.1.13")
+        if (localIdePathProvider.isPresent) {
+            local(localIdePathProvider.get())
+        } else {
+            androidStudio(targetAndroidStudioVersionProvider.get())
+        }
 
 //        intellijIdeaCommunity("2024.2")
 
-        bundledPlugin("org.jetbrains.kotlin")
         zipSigner()
     }
 }
@@ -84,8 +92,15 @@ intellijPlatform {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+kotlin {
+    jvmToolchain(21)
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
 }
 
 tasks {

@@ -1,15 +1,14 @@
 package com.wonddak.fonthelper.widget
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -62,8 +61,8 @@ fun DragDropFiles(
                 if (data is DragData.FilesList) {
                     val filePaths = data.readFiles()
                     for (filePath in filePaths) {
-                        if (!filePath.endsWith(".ttf") && !filePath.endsWith(".otf")) continue
-                        val newPath = filePath.replace("file:", "")
+                        if (!filePath.isSupportedFontFile()) continue
+                        val newPath = filePath.normalizeDroppedPath()
 
                         val fileName = newPath.trimEnd('/').substringAfterLast('/').lowercase()
                         settings.checkType(fileName)?.let { (isItalic, weight) ->
@@ -91,15 +90,15 @@ fun DragDropFiles(
 
     Box(
         modifier = modifier
-            .fillMaxWidth(0.8f)
-            .heightIn(min = 150.dp)
+            .fillMaxWidth()
+            .heightIn(min = 128.dp)
             .drawBehind {
                 drawRoundRect(color = color, style = stroke)
             }
             .background(
                 color = when {
-                    isHover -> color.copy(alpha = 0.05f)
-                    else -> Color.Transparent
+                    isHover -> color.copy(alpha = 0.12f)
+                    else -> color.copy(alpha = 0.04f)
                 },
                 shape = MaterialTheme.shapes.small,
             )
@@ -111,7 +110,8 @@ fun DragDropFiles(
     ) {
         Column(
             modifier = Modifier
-                .align(Alignment.Center),
+                .align(Alignment.Center)
+                .padding(horizontal = 12.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -122,6 +122,11 @@ fun DragDropFiles(
             )
             Text(
                 text = "Drag & drop Font Files",
+                style = MaterialTheme.typography.body1
+            )
+            Text(
+                text = "Supports .ttf and .otf",
+                style = MaterialTheme.typography.caption
             )
         }
     }

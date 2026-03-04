@@ -12,10 +12,9 @@ object ModuleFinder {
      * find Top Module
      */
     fun findModule(project: Project): List<ModuleData> {
-        val projectPath = project.basePath!!
         val moduleManager = ModuleManager.getInstance(project)
 
-        val moduleList = mutableListOf<ModuleData>()
+        val moduleList = LinkedHashMap<String, ModuleData>()
 
         moduleManager.modules.forEach { module ->
             ModuleRootManager.getInstance(module).contentRoots.forEach { root ->
@@ -28,33 +27,28 @@ object ModuleFinder {
                     // if build.gradle or build.gradle.kts exist
                     // then In this case, it is determined to Top Module
                     val commonMainPath = File(moduleDir, "src/commonMain")
+                    val mainPath = File(moduleDir, "src/main")
 
                     if (commonMainPath.exists()) {
-                        // if src/commonMain exist
-                        // then In this case, it is determined to CMP Project
-                        val moduleData = ModuleData(
+                        // Prefer CMP source set when both commonMain and main exist.
+                        val key = "${module.name}:${commonMainPath.path}:cmp"
+                        moduleList.putIfAbsent(key, ModuleData(
                             name = module.name,
                             path = commonMainPath.path,
                             isCMP = true,
-                        )
-                        moduleList.add(moduleData)
-                    }
-
-                    val mainPath = File(moduleDir, "src/main")
-                    if (mainPath.exists()) {
-                        // if src/main exist
-                        // then In this case, it is determined to Android Only Project
-                        val moduleData = ModuleData(
+                        ))
+                    } else if (mainPath.exists()) {
+                        val key = "${module.name}:${mainPath.path}:main"
+                        moduleList.putIfAbsent(key, ModuleData(
                             name = module.name,
                             path = mainPath.path,
                             isCMP = false,
-                        )
-                        moduleList.add(moduleData)
+                        ))
                     }
                 }
             }
         }
-        return moduleList
+        return moduleList.values.toList()
     }
 
 }

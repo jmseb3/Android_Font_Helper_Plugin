@@ -26,9 +26,6 @@ class FontHelperToolWindow : ToolWindowFactory,
         project : Project
     ) {
         moduleList = ModuleFinder.findModule(project)
-        moduleList.forEach {
-            println("[KK] $it")
-        }
     }
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {

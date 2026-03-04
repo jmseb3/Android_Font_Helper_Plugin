@@ -56,10 +56,14 @@ Customize matching rules in:
 | Black | `-black` | `-blackitalic` |
 
 If multiple files match the same slot, Font Helper opens a conflict dialog with **Prev/Next** slot navigation so you can choose one file per slot.
+![duplicate](./screenshot/04.duplicate_font.png)
+
 
 ## Google Fonts (Beta)
 
 Google import uses `download/list?family=...` metadata first, then downloads only selected files.
+
+![from_google](./screenshot/03.from_google_fonts.png)
 
 - Marked as **experimental** in UI.
 - Manifest list is cached temporarily to reduce repeated requests.

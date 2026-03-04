@@ -1,7 +1,7 @@
 [versions]
-kotlin = "2.1.20"
-compose = "1.8.0"
-intellij = "2.5.0"
+kotlin = "2.2.20"
+compose = "1.9.0"
+intellij = "2.11.0"
 mpfilepicker = "3.1.0"
 serializationJson = "1.8.1"
 ktor = "3.0.0"

@@ -35,6 +35,13 @@
     </description>
     <change-notes>
         <![CDATA[
+          <h3>2.1.2</h3>
+          <ul>
+            <li>Improved: Plugin package size reduced significantly by trimming unnecessary bundled runtimes.</li>
+            <li>Improved: UI icon consistency restored while keeping a lightweight core icon set.</li>
+            <li>Improved: Action icons diversified for better visual hierarchy in import and dialog flows.</li>
+          </ul>
+
           <h3>2.1.1</h3>
           <ul>
             <li>New: Setup/Fonts tab layout to reduce scrolling and improve workflow focus.</li>

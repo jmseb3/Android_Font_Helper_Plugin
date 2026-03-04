@@ -78,9 +78,8 @@ Google import uses `download/list?family=...` metadata first, then downloads onl
 
 | Output | Android | Compose Multiplatform |
 |---|---|---|
-| Class File | `./[module]/src/main/[java|kotlin]/[packageName]` | `./[module]/src/commonMain/kotlin/[packageName]` |
-| Font Files | `./[module]/src/main/res/font` | `./[module]/src/commonMain/composeResources/font` |
-
+| Class File | ./&lt;module&gt;/src/main/&lt;java\|kotlin&gt;/&lt;packageName&gt; | ./&lt;module&gt;/src/commonMain/kotlin/&lt;packageName&gt; |
+| Font Files | ./&lt;module&gt;/src/main/res/font | ./&lt;module&gt;/src/commonMain/composeResources/font |
 ## Generated Naming
 
 - Font file: `(className)_(weight)[_italic].ttf`

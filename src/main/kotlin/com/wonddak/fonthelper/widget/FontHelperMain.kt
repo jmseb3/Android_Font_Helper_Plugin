@@ -26,10 +26,7 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -335,7 +332,7 @@ fun FontHelperMain(
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
-                                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                                            Icon(Icons.Default.Delete, contentDescription = null)
                                                             Text(" Clear Cache")
                                                         }
                                                         Button(
@@ -343,7 +340,7 @@ fun FontHelperMain(
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
-                                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                                            Icon(Icons.Default.Build, contentDescription = null)
                                                             Text(" Import ZIP")
                                                         }
                                                         Button(
@@ -351,7 +348,7 @@ fun FontHelperMain(
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
-                                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                                            Icon(Icons.Default.Build, contentDescription = null)
                                                             Text(" Google Fonts (Beta)")
                                                         }
                                                     }
@@ -378,21 +375,21 @@ fun FontHelperMain(
                                                             },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
-                                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                                            Icon(Icons.Default.Delete, contentDescription = null)
                                                             Text(" Clear Cache")
                                                         }
                                                         Button(
                                                             onClick = { showDownloadedZipPicker = true },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
-                                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                                            Icon(Icons.Default.Build, contentDescription = null)
                                                             Text(" Import ZIP")
                                                         }
                                                         Button(
                                                             onClick = { showGoogleFontsDialog = true },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
-                                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                                            Icon(Icons.Default.Build, contentDescription = null)
                                                             Text(" Google Fonts (Beta)")
                                                         }
                                                     }

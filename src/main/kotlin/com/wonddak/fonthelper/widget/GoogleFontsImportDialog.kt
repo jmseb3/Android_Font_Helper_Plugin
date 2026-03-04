@@ -19,7 +19,7 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -184,7 +184,7 @@ fun GoogleFontsImportDialog(
                                 enabled = !loading && selectedFamily != null,
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Icon(Icons.Default.Build, contentDescription = null)
                                 Text(" Next: Select Files")
                             }
                         }
@@ -203,7 +203,7 @@ fun GoogleFontsImportDialog(
                                 },
                                 enabled = !loading && selectedFamily != null
                             ) {
-                                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                Icon(Icons.Default.Build, contentDescription = null)
                                 Text(" Next: Select Files")
                             }
                         }

@@ -34,7 +34,6 @@ dependencies {
     implementation(libs.compose.desktop.jvm)
     implementation(libs.compose.material.icons.core.desktop)
 
-//    implementation(libs.android.build.tools)
     implementation(libs.mpfilepicker)
     implementation(libs.serialization.json)
     implementation(libs.ktor.client.core)
@@ -48,7 +47,9 @@ dependencies {
             androidStudio(targetAndroidStudioVersionProvider.get())
         }
 
-//        intellijIdeaCommunity("2024.2")
+        // Compose support dependencies
+        @Suppress("UnstableApiUsage")
+        composeUI()
 
         zipSigner()
     }

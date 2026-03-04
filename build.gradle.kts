@@ -32,12 +32,7 @@ configurations.configureEach {
 dependencies {
     compileOnly(compose.desktop.currentOs)
     implementation(libs.compose.desktop.jvm)
-    implementation(libs.compose.desktop.jvm.linux.arm64)
-    implementation(libs.compose.desktop.jvm.linux.x64)
-    implementation(libs.compose.desktop.jvm.macos.arm64)
-    implementation(libs.compose.desktop.jvm.macos.x64)
-    implementation(libs.compose.desktop.jvm.windows.x64)
-    implementation(libs.compose.material.icons.extended.desktop)
+    implementation(libs.compose.material.icons.core.desktop)
 
 //    implementation(libs.android.build.tools)
     implementation(libs.mpfilepicker)

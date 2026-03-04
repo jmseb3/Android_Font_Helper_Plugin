@@ -1,5 +1,4 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -80,13 +79,8 @@ intellijPlatform {
             FailureLevel.NOT_DYNAMIC,
         )
         ides {
-            recommended()
-            select {
-                types = listOf(IntelliJPlatformType.AndroidStudio)
-                channels = listOf(ProductRelease.Channel.RELEASE)
-                sinceBuild = "242"
-                untilBuild = null
-            }
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.1") {}
+            create(IntelliJPlatformType.AndroidStudio, libs.versions.androidStudioTarget.get()) {}
         }
     }
     signing {
@@ -109,6 +103,7 @@ kotlin {
     jvmToolchain(21)
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_21)
+        freeCompilerArgs.add("-Xjvm-default=all")
     }
 }
 

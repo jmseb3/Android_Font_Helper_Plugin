@@ -20,6 +20,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.RadioButton
 import androidx.compose.material.Surface
+import androidx.compose.material.Tab
+import androidx.compose.material.TabRow
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
@@ -87,7 +89,9 @@ fun FontHelperMain(
             var googleFileSelectionState by remember { mutableStateOf<GoogleFileSelectionState?>(null) }
             var packageNameTouchedByUser by rememberSaveable { mutableStateOf(false) }
             var autoRenameClassFromGoogle by rememberSaveable { mutableStateOf(true) }
-            val contentScroll = rememberScrollState()
+            var selectedTab by rememberSaveable { mutableStateOf(MainContentTab.SETUP) }
+            val setupScroll = rememberScrollState()
+            val fontsScroll = rememberScrollState()
 
             FilePicker(
                 show = showDownloadedZipPicker,
@@ -136,293 +140,325 @@ fun FontHelperMain(
                 }
             }
 
+            if (moduleList.isNotEmpty()) {
+                LaunchedEffect(moduleList) {
+                    val selected = fontData.selectedModule
+                    val selectedStillExists = selected != null && moduleList.any {
+                        it.path == selected.path && it.isCMP == selected.isCMP
+                    }
+                    if (!selectedStillExists) {
+                        fontData = fontData.copy(selectedModule = moduleList.first())
+                    }
+                }
+                LaunchedEffect(fontData.selectedModule) {
+                    val module = fontData.selectedModule ?: return@LaunchedEffect
+                    if (packageNameTouchedByUser && fontData.packageName.isNotBlank()) return@LaunchedEffect
+                    val resolvedPackage = PackageNameResolver.resolve(module) ?: return@LaunchedEffect
+                    fontData = fontData.copy(packageName = resolvedPackage)
+                }
+            }
+
             Box(modifier = Modifier.fillMaxSize()) {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(14.dp)
-                        .padding(bottom = 86.dp)
-                        .verticalScroll(contentScroll),
+                        .padding(bottom = 86.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                Text(
-                    text = "Font Helper",
-                    style = MaterialTheme.typography.h6
-                )
-                Text(
-                    text = "Generate Compose FontFamily and copy font resources to your module.",
-                    style = MaterialTheme.typography.caption
-                )
-
-                InputRow(
-                    title = "Font Class Name",
-                    text = fontData.fileName,
-                    onValueChange = {
-                        fontData = fontData.copy(fileName = it)
-                    }
-                )
-                InputRow(
-                    title = "Package Name",
-                    text = fontData.packageName,
-                    onValueChange = {
-                        packageNameTouchedByUser = true
-                        fontData = fontData.copy(packageName = it)
-                    }
-                )
-                if (moduleList.isNotEmpty()) {
-                    LaunchedEffect(moduleList) {
-                        val selected = fontData.selectedModule
-                        val selectedStillExists = selected != null && moduleList.any {
-                            it.path == selected.path && it.isCMP == selected.isCMP
+                    Text(
+                        text = "Font Helper",
+                        style = MaterialTheme.typography.h6
+                    )
+                    Text(
+                        text = "Generate Compose FontFamily and copy font resources to your module.",
+                        style = MaterialTheme.typography.caption
+                    )
+                    InputRow(
+                        title = "Font Class Name",
+                        text = fontData.fileName,
+                        onValueChange = {
+                            fontData = fontData.copy(fileName = it)
                         }
-                        if (!selectedStillExists) {
-                            fontData = fontData.copy(selectedModule = moduleList.first())
+                    )
+
+                    TabRow(selectedTabIndex = selectedTab.ordinal) {
+                        MainContentTab.entries.forEach { tab ->
+                            Tab(
+                                selected = selectedTab == tab,
+                                onClick = { selectedTab = tab },
+                                text = { Text(tab.label) }
+                            )
                         }
                     }
-                    LaunchedEffect(fontData.selectedModule) {
-                        val module = fontData.selectedModule ?: return@LaunchedEffect
-                        if (packageNameTouchedByUser && fontData.packageName.isNotBlank()) return@LaunchedEffect
-                        val resolvedPackage = PackageNameResolver.resolve(module) ?: return@LaunchedEffect
-                        fontData = fontData.copy(packageName = resolvedPackage)
-                    }
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        elevation = 1.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                text = "Project Settings",
-                                style = MaterialTheme.typography.subtitle1
-                            )
-                            ModuleSpinner(
-                                moduleList = moduleList,
-                                selectedModule = fontData.selectedModule,
-                                updateModule = { module ->
-                                    fontData = fontData.copy(selectedModule = module)
-                                }
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                            ) {
-                                TextButton(
-                                    onClick = onRefreshModules
-                                ) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null)
-                                    Text(" Refresh Modules")
-                                }
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            val module = fontData.selectedModule ?: return@launch
-                                            val resolvedPackage = PackageNameResolver.resolve(module) ?: return@launch
-                                            fontData = fontData.copy(packageName = resolvedPackage)
-                                            packageNameTouchedByUser = false
-                                        }
-                                    }
-                                ) {
-                                    Text("Auto Detect Package")
-                                }
-                            }
 
-                            if (fontData.selectedModule?.isCMP == false) {
-                                LabelContent(
-                                    "Use Kotlin Path"
+                    if (moduleList.isNotEmpty()) {
+                        when (selectedTab) {
+                            MainContentTab.SETUP -> {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(setupScroll),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    Checkbox(
-                                        checked = fontData.useKotlinPath,
-                                        onCheckedChange = {
-                                            fontData = fontData.copy(useKotlinPath = it)
+                                    InputRow(
+                                        title = "Package Name",
+                                        text = fontData.packageName,
+                                        onValueChange = {
+                                            packageNameTouchedByUser = true
+                                            fontData = fontData.copy(packageName = it)
                                         }
                                     )
+                                    Surface(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = MaterialTheme.shapes.medium,
+                                        elevation = 1.dp
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(
+                                                text = "Project Settings",
+                                                style = MaterialTheme.typography.subtitle1
+                                            )
+                                            ModuleSpinner(
+                                                moduleList = moduleList,
+                                                selectedModule = fontData.selectedModule,
+                                                updateModule = { module ->
+                                                    fontData = fontData.copy(selectedModule = module)
+                                                }
+                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                                            ) {
+                                                TextButton(
+                                                    onClick = onRefreshModules
+                                                ) {
+                                                    Icon(Icons.Default.Refresh, contentDescription = null)
+                                                    Text(" Refresh Modules")
+                                                }
+                                                TextButton(
+                                                    onClick = {
+                                                        scope.launch {
+                                                            val module = fontData.selectedModule ?: return@launch
+                                                            val resolvedPackage = PackageNameResolver.resolve(module) ?: return@launch
+                                                            fontData = fontData.copy(packageName = resolvedPackage)
+                                                            packageNameTouchedByUser = false
+                                                        }
+                                                    }
+                                                ) {
+                                                    Text("Auto Detect Package")
+                                                }
+                                            }
+
+                                            if (fontData.selectedModule?.isCMP == false) {
+                                                LabelContent(
+                                                    "Use Kotlin Path"
+                                                ) {
+                                                    Checkbox(
+                                                        checked = fontData.useKotlinPath,
+                                                        onCheckedChange = {
+                                                            fontData = fontData.copy(useKotlinPath = it)
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                            LabelContent("Class Path Preview") {
+                                                val basePath = project.basePath
+                                                val previewPath = if (basePath.isNullOrBlank()) {
+                                                    fontData.previewClassPath()
+                                                } else {
+                                                    fontData.previewClassPath().replace(basePath, ".")
+                                                }
+                                                Text(
+                                                    text = previewPath,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(
+                                                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.06f),
+                                                            shape = MaterialTheme.shapes.small
+                                                        )
+                                                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                                                    style = MaterialTheme.typography.caption
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                            LabelContent("Class Path Preview") {
-                                val basePath = project.basePath
-                                val previewPath = if (basePath.isNullOrBlank()) {
-                                    fontData.previewClassPath()
-                                } else {
-                                    fontData.previewClassPath().replace(basePath, ".")
-                                }
-                                Text(
-                                    text = previewPath,
+
+                            MainContentTab.FONTS -> {
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            color = MaterialTheme.colors.onSurface.copy(alpha = 0.06f),
-                                            shape = MaterialTheme.shapes.small
-                                        )
-                                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                                    style = MaterialTheme.typography.caption
-                                )
-                            }
-                        }
-                    }
-
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        elevation = 1.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Text(
-                                text = "Font Files",
-                                style = MaterialTheme.typography.subtitle1
-                            )
-                            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                                val narrow = maxWidth < 820.dp
-                                if (narrow) {
-                                    Column(
+                                        .fillMaxSize()
+                                        .verticalScroll(fontsScroll),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Surface(
                                         modifier = Modifier.fillMaxWidth(),
-                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                        shape = MaterialTheme.shapes.medium,
+                                        elevation = 1.dp
                                     ) {
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    downloadingGoogleFont = true
-                                                    googleImportMessage = "Clearing downloaded font cache..."
-                                                    try {
-                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
-                                                        fontData = removeManagedDownloadedPaths(fontData)
-                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
-                                                    } catch (e: Exception) {
-                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
-                                                    } finally {
-                                                        downloadingGoogleFont = false
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                                        ) {
+                                            Text(
+                                                text = "Font Files",
+                                                style = MaterialTheme.typography.subtitle1
+                                            )
+                                            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                                                val narrow = maxWidth < 820.dp
+                                                if (narrow) {
+                                                    Column(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                                                    ) {
+                                                        Button(
+                                                            onClick = {
+                                                                scope.launch {
+                                                                    downloadingGoogleFont = true
+                                                                    googleImportMessage = "Clearing downloaded font cache..."
+                                                                    try {
+                                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
+                                                                        fontData = removeManagedDownloadedPaths(fontData)
+                                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
+                                                                    } catch (e: Exception) {
+                                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
+                                                                    } finally {
+                                                                        downloadingGoogleFont = false
+                                                                    }
+                                                                }
+                                                            },
+                                                            enabled = !downloadingGoogleFont,
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                                            Text(" Clear Cache")
+                                                        }
+                                                        Button(
+                                                            onClick = { showDownloadedZipPicker = true },
+                                                            enabled = !downloadingGoogleFont,
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                                            Text(" Import ZIP")
+                                                        }
+                                                        Button(
+                                                            onClick = { showGoogleFontsDialog = true },
+                                                            enabled = !downloadingGoogleFont,
+                                                            modifier = Modifier.fillMaxWidth()
+                                                        ) {
+                                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                                            Text(" Google Fonts (Beta)")
+                                                        }
+                                                    }
+                                                } else {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                                                    ) {
+                                                        Button(
+                                                            onClick = {
+                                                                scope.launch {
+                                                                    downloadingGoogleFont = true
+                                                                    googleImportMessage = "Clearing downloaded font cache..."
+                                                                    try {
+                                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
+                                                                        fontData = removeManagedDownloadedPaths(fontData)
+                                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
+                                                                    } catch (e: Exception) {
+                                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
+                                                                    } finally {
+                                                                        downloadingGoogleFont = false
+                                                                    }
+                                                                }
+                                                            },
+                                                            enabled = !downloadingGoogleFont
+                                                        ) {
+                                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                                            Text(" Clear Cache")
+                                                        }
+                                                        Button(
+                                                            onClick = { showDownloadedZipPicker = true },
+                                                            enabled = !downloadingGoogleFont
+                                                        ) {
+                                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
+                                                            Text(" Import ZIP")
+                                                        }
+                                                        Button(
+                                                            onClick = { showGoogleFontsDialog = true },
+                                                            enabled = !downloadingGoogleFont
+                                                        ) {
+                                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
+                                                            Text(" Google Fonts (Beta)")
+                                                        }
                                                     }
                                                 }
-                                            },
-                                            enabled = !downloadingGoogleFont,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
-                                            Text(" Clear Cache")
-                                        }
-                                        Button(
-                                            onClick = { showDownloadedZipPicker = true },
-                                            enabled = !downloadingGoogleFont,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
-                                            Text(" Import ZIP")
-                                        }
-                                        Button(
-                                            onClick = { showGoogleFontsDialog = true },
-                                            enabled = !downloadingGoogleFont,
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
-                                            Text(" Google Fonts (Beta)")
-                                        }
-                                    }
-                                } else {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                                    ) {
-                                        Button(
-                                            onClick = {
-                                                scope.launch {
-                                                    downloadingGoogleFont = true
-                                                    googleImportMessage = "Clearing downloaded font cache..."
-                                                    try {
-                                                        val deleted = GoogleFontsUtil.clearDownloadedCache()
-                                                        fontData = removeManagedDownloadedPaths(fontData)
-                                                        googleImportMessage = "Download cache cleared. $deleted items deleted."
-                                                    } catch (e: Exception) {
-                                                        googleImportMessage = "Failed to clear cache: ${e.message ?: "Unknown error"}"
-                                                    } finally {
-                                                        downloadingGoogleFont = false
-                                                    }
+                                            }
+                                            if (googleImportMessage != null) {
+                                                Text(
+                                                    text = googleImportMessage.orEmpty(),
+                                                    style = MaterialTheme.typography.caption
+                                                )
+                                            }
+                                            DragDropFiles(
+                                                modifier = Modifier.align(Alignment.CenterHorizontally),
+                                                updateNormalFontList = { index, path ->
+                                                    fontData = fontData.updateNormalFont(index, path)
+                                                },
+                                                updateItalicFontList = { index, path ->
+                                                    fontData = fontData.updateItalicFont(index, path)
                                                 }
-                                            },
-                                            enabled = !downloadingGoogleFont
-                                        ) {
-                                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
-                                            Text(" Clear Cache")
-                                        }
-                                        Button(
-                                            onClick = { showDownloadedZipPicker = true },
-                                            enabled = !downloadingGoogleFont
-                                        ) {
-                                            Icon(Icons.Default.FolderOpen, contentDescription = null)
-                                            Text(" Import ZIP")
-                                        }
-                                        Button(
-                                            onClick = { showGoogleFontsDialog = true },
-                                            enabled = !downloadingGoogleFont
-                                        ) {
-                                            Icon(Icons.Default.CloudDownload, contentDescription = null)
-                                            Text(" Google Fonts (Beta)")
+                                            )
+                                            FontTable(
+                                                normalFontList = fontData.normalFontPath,
+                                                italicFontList = fontData.italicFontPath,
+                                                updateNormalFontList = { index, path ->
+                                                    fontData = fontData.updateNormalFont(index, path)
+                                                },
+                                                updateItalicFontList = { index, path ->
+                                                    fontData = fontData.updateItalicFont(index, path)
+                                                }
+                                            )
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.End
+                                            ) {
+                                                Text(
+                                                    text = "Google Fonts import is experimental.",
+                                                    style = MaterialTheme.typography.caption
+                                                )
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            if (googleImportMessage != null) {
-                                Text(
-                                    text = googleImportMessage.orEmpty(),
-                                    style = MaterialTheme.typography.caption
-                                )
-                            }
-                            DragDropFiles(
-                                modifier = Modifier.align(Alignment.CenterHorizontally),
-                                updateNormalFontList = { index, path ->
-                                    fontData = fontData.updateNormalFont(index, path)
-                                },
-                                updateItalicFontList = { index, path ->
-                                    fontData = fontData.updateItalicFont(index, path)
-                                }
-                            )
-                            FontTable(
-                                normalFontList = fontData.normalFontPath,
-                                italicFontList = fontData.italicFontPath,
-                                updateNormalFontList = { index, path ->
-                                    fontData = fontData.updateNormalFont(index, path)
-                                },
-                                updateItalicFontList = { index, path ->
-                                    fontData = fontData.updateItalicFont(index, path)
-                                }
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
-                            ) {
-                                Text(
-                                    text = "Google Fonts import is experimental.",
-                                    style = MaterialTheme.typography.caption
-                                )
                             }
                         }
-                    }
-
-                } else {
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.medium,
-                        elevation = 1.dp
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    } else {
+                        Surface(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.medium,
+                            elevation = 1.dp
                         ) {
-                            Text(
-                                text = "No module found. If build/sync just finished, click refresh.",
-                                style = MaterialTheme.typography.body2
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.End
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                TextButton(onClick = onRefreshModules) {
-                                    Icon(Icons.Default.Refresh, contentDescription = null)
-                                    Text(" Refresh")
+                                Text(
+                                    text = "No module found. If build/sync just finished, click refresh.",
+                                    style = MaterialTheme.typography.body2
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    TextButton(onClick = onRefreshModules) {
+                                        Icon(Icons.Default.Refresh, contentDescription = null)
+                                        Text(" Refresh")
+                                    }
                                 }
                             }
                         }
@@ -553,8 +589,6 @@ fun FontHelperMain(
                             conflictSelectionState = null
                         }
                     )
-                }
-
                 }
 
                 Surface(
@@ -930,6 +964,11 @@ private data class FontSlotKey(
         val style = if (isItalic) "Italic" else "Normal"
         return "${FontUtil.getWeightTextByIndex(weight)} $style"
     }
+}
+
+private enum class MainContentTab(val label: String) {
+    SETUP("Setup"),
+    FONTS("Fonts")
 }
 
 private fun String.toSafeClassName(): String {

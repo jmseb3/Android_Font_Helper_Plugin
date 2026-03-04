@@ -36,27 +36,27 @@ fun FontTable(
     updateItalicFontList: (Int, String) -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val compact = maxWidth < 860.dp
+        val compact = maxWidth < 640.dp
         val gap = 12.dp
 
         if (!compact) {
-            val labelWidth = 100.dp
-            val contentWidth = ((maxWidth - labelWidth - (gap * 2)) / 2).coerceAtLeast(180.dp)
+            val labelWidth = 92.dp
             Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(gap),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Spacer(modifier = Modifier.width(labelWidth))
                 Text(
                     text = FontUtil.NORMAL,
-                    modifier = Modifier.width(contentWidth),
+                    modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     fontStyle = FontStyle.Normal,
                     style = MaterialTheme.typography.subtitle2
                 )
                 Text(
                     text = FontUtil.ITALIC,
-                    modifier = Modifier.width(contentWidth),
+                    modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     fontStyle = FontStyle.Italic,
                     style = MaterialTheme.typography.subtitle2
@@ -68,6 +68,7 @@ fun FontTable(
             ) {
                 repeat(9) { index ->
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(gap),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -79,12 +80,12 @@ fun FontTable(
                             style = MaterialTheme.typography.body2
                         )
                         FontBox(
-                            modifier = Modifier.width(contentWidth),
+                            modifier = Modifier.weight(1f),
                             path = normalFontList[index]?.path ?: "",
                             onNewPath = { updateNormalFontList(index, it) }
                         )
                         FontBox(
-                            modifier = Modifier.width(contentWidth),
+                            modifier = Modifier.weight(1f),
                             path = italicFontList[index]?.path ?: "",
                             onNewPath = { updateItalicFontList(index, it) }
                         )

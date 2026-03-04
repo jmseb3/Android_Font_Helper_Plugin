@@ -24,6 +24,11 @@ repositories {
     }
 }
 
+configurations.configureEach {
+    exclude(group = "org.jetbrains.runtime", module = "jbr-api")
+    exclude(group = "org.slf4j", module = "slf4j-api")
+}
+
 dependencies {
     compileOnly(compose.desktop.currentOs)
     implementation(libs.compose.desktop.jvm)

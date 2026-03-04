@@ -2,7 +2,7 @@ package com.wonddak.fonthelper.util
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.WriteAction
-import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -82,6 +82,7 @@ object FontUtil {
         project: Project,
         fontData: FontData
     ) {
+        var generatedFilePath: String? = null
         ApplicationManager.getApplication().runWriteAction {
             if (fontData.selectedModule == null) {
                 return@runWriteAction
@@ -104,17 +105,23 @@ object FontUtil {
 
                 //Refresh Class File
                 VfsUtil.markDirtyAndRefresh(true,true,true,psiFile.virtualFile)
+                generatedFilePath = psiFile.virtualFile.path
 
                 //Refresh Font Dir
                 LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
                     VfsUtil.markDirtyAndRefresh(true,true,true,  it)
                 }
-                //Open Class File
-                FileEditorManager.getInstance(project).openFile(psiFile.virtualFile, true)
             }
 
             // Refresh project view/index after generated sources and copied fonts are added.
             reloadProject(project, fontData)
+        }
+
+        generatedFilePath?.let { path ->
+            ApplicationManager.getApplication().invokeLater {
+                val target = LocalFileSystem.getInstance().findFileByPath(path) ?: return@invokeLater
+                OpenFileDescriptor(project, target).navigate(true)
+            }
         }
     }
 

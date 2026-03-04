@@ -24,6 +24,8 @@
             <li>ZIP import with automatic weight/style matching and conflict selection</li>
             <li>Google Fonts import flow (Beta)</li>
             <li>Package name auto-detection and one-click generation</li>
+            <li>Setup/Fonts tab layout to reduce long scrolling in the tool window</li>
+            <li>Module list auto-refresh after Gradle sync completion</li>
           </ul>
           <p><strong>Resources:</strong></p>
           <ul>
@@ -32,7 +34,16 @@
         ]]>
     </description>
     <change-notes>
-        FontHelper V2 Release
+        <![CDATA[
+          <h3>2.1.1</h3>
+          <ul>
+            <li>New: Setup/Fonts tab layout to reduce scrolling and improve workflow focus.</li>
+            <li>New: Module list reload automatically when Gradle sync/import is finished.</li>
+            <li>New: Google Fonts first dialog now includes "Auto update Font Class Name" option (default enabled).</li>
+            <li>Improved: Font table responsive layout and compact threshold for narrower tool windows.</li>
+            <li>Fixed: Runtime classloader conflicts after Generate by excluding conflicting runtime libs and opening files safely.</li>
+          </ul>
+        ]]>
     </change-notes>
 
   <!-- Product and plugin compatibility requirements.

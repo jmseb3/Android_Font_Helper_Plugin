@@ -86,6 +86,7 @@ fun FontHelperMain(
             var conflictSelectionState by remember { mutableStateOf<ImportConflictSelectionState?>(null) }
             var googleFileSelectionState by remember { mutableStateOf<GoogleFileSelectionState?>(null) }
             var packageNameTouchedByUser by rememberSaveable { mutableStateOf(false) }
+            var autoRenameClassFromGoogle by rememberSaveable { mutableStateOf(true) }
             val contentScroll = rememberScrollState()
 
             FilePicker(
@@ -276,7 +277,7 @@ fun FontHelperMain(
                                 style = MaterialTheme.typography.subtitle1
                             )
                             BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                                val narrow = maxWidth < 920.dp
+                                val narrow = maxWidth < 820.dp
                                 if (narrow) {
                                     Column(
                                         modifier = Modifier.fillMaxWidth(),
@@ -430,6 +431,8 @@ fun FontHelperMain(
 
                 if (showGoogleFontsDialog) {
                     GoogleFontsImportDialog(
+                        autoRenameClassName = autoRenameClassFromGoogle,
+                        onAutoRenameClassNameChange = { autoRenameClassFromGoogle = it },
                         onDismiss = { showGoogleFontsDialog = false },
                         onImport = { family ->
                             showGoogleFontsDialog = false
@@ -472,7 +475,12 @@ fun FontHelperMain(
                                             val assignments = autoSelectedBySlot.mapNotNull { (slot, ref) ->
                                                 downloadedByUrl[ref.url]?.let { slot to it }
                                             }.toMap()
-                                            fontData = applyImportedFonts(fontData, assignments)
+                                            val updated = applyImportedFonts(fontData, assignments)
+                                            fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {
+                                                updated.copy(fileName = family.toSafeClassName())
+                                            } else {
+                                                updated
+                                            }
                                             googleImportMessage =
                                                 "\"$family\" imported. ${assignments.size} variants mapped."
                                         } else {
@@ -515,7 +523,12 @@ fun FontHelperMain(
                                         downloadedByUrl[ref.url]?.let { slot to it }
                                     }.toMap()
 
-                                    fontData = applyImportedFonts(fontData, assignments)
+                                    val updated = applyImportedFonts(fontData, assignments)
+                                    fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {
+                                        updated.copy(fileName = state.family.toSafeClassName())
+                                    } else {
+                                        updated
+                                    }
                                     googleImportMessage =
                                         "\"${state.family}\" imported. ${assignments.size} variants mapped."
                                 } catch (e: Exception) {
@@ -917,4 +930,15 @@ private data class FontSlotKey(
         val style = if (isItalic) "Italic" else "Normal"
         return "${FontUtil.getWeightTextByIndex(weight)} $style"
     }
+}
+
+private fun String.toSafeClassName(): String {
+    val parts = trim()
+        .split(Regex("[^A-Za-z0-9]+"))
+        .filter { it.isNotBlank() }
+    if (parts.isEmpty()) return ""
+    val merged = parts.joinToString("") { part ->
+        part.lowercase().replaceFirstChar { c -> c.uppercase() }
+    }
+    return if (merged.firstOrNull()?.isDigit() == true) "Font$merged" else merged
 }

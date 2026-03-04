@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Button
+import androidx.compose.material.Checkbox
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,8 @@ import java.util.Locale
 
 @Composable
 fun GoogleFontsImportDialog(
+    autoRenameClassName: Boolean,
+    onAutoRenameClassNameChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onImport: (family: String) -> Unit,
 ) {
@@ -95,6 +99,20 @@ fun GoogleFontsImportDialog(
                     singleLine = true,
                     label = { Text("Search family") }
                 )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = autoRenameClassName,
+                        onCheckedChange = onAutoRenameClassNameChange
+                    )
+                    Text(
+                        text = "Auto update Font Class Name",
+                        style = MaterialTheme.typography.caption
+                    )
+                }
                 if (!loading && errorMessage == null) {
                     Text(
                         text = "${filtered.size} results",
@@ -146,7 +164,7 @@ fun GoogleFontsImportDialog(
                 }
 
                 BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    val narrow = maxWidth < 460.dp
+                    val narrow = maxWidth < 420.dp
                     if (narrow) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),

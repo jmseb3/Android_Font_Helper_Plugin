@@ -5,50 +5,86 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ModuleRootManager
 import com.wonddak.fonthelper.model.ModuleData
 import java.io.File
+import java.io.IOException
+import java.util.Locale
 
 object ModuleFinder {
 
     /**
-     * find Top Module
+     * Find importable Gradle modules.
+     *
+     * Selection rules:
+     * 1) Module root must have build.gradle(.kts)
+     * 2) Prefer KMP(commonMain) over Android(main) when both exist
+     * 3) Remove duplicates by normalized absolute path
+     * 4) Return a stable sorted list for predictable UI ordering
      */
     fun findModule(project: Project): List<ModuleData> {
         val moduleManager = ModuleManager.getInstance(project)
+        val byPath = LinkedHashMap<String, ModuleData>()
 
-        val moduleList = LinkedHashMap<String, ModuleData>()
-
-        moduleManager.modules.forEach { module ->
-            ModuleRootManager.getInstance(module).contentRoots.forEach { root ->
-                val moduleDir = File(root.path)
-                //check build.gradle or build.gradle.kts exist
-                val gradleFile = File(moduleDir, "build.gradle")
-                val gradleKtsFile = File(moduleDir, "build.gradle.kts")
-
-                if (gradleFile.exists() || gradleKtsFile.exists()) {
-                    // if build.gradle or build.gradle.kts exist
-                    // then In this case, it is determined to Top Module
-                    val commonMainPath = File(moduleDir, "src/commonMain")
-                    val mainPath = File(moduleDir, "src/main")
-
-                    if (commonMainPath.exists()) {
-                        // Prefer CMP source set when both commonMain and main exist.
-                        val key = "${module.name}:${commonMainPath.path}:cmp"
-                        moduleList.putIfAbsent(key, ModuleData(
-                            name = module.name,
-                            path = commonMainPath.path,
-                            isCMP = true,
-                        ))
-                    } else if (mainPath.exists()) {
-                        val key = "${module.name}:${mainPath.path}:main"
-                        moduleList.putIfAbsent(key, ModuleData(
-                            name = module.name,
-                            path = mainPath.path,
-                            isCMP = false,
-                        ))
+        moduleManager.modules
+            .sortedBy { it.name.lowercase(Locale.getDefault()) }
+            .forEach { module ->
+                ModuleRootManager.getInstance(module).contentRoots.forEach { root ->
+                    val moduleDir = root.path.toCanonicalFileOrNull()
+                        ?: return@forEach
+                    if (!moduleDir.isDirectory) {
+                        return@forEach
                     }
+                    if (!moduleDir.hasGradleBuildFile()) {
+                        return@forEach
+                    }
+
+                    val selected = resolveModuleData(module.name, moduleDir)
+                        ?: return@forEach
+                    byPath.putIfAbsent(selected.path, selected)
                 }
             }
-        }
-        return moduleList.values.toList()
+
+        return byPath.values
+            .sortedWith(
+                compareBy<ModuleData> { it.name.lowercase(Locale.getDefault()) }
+                    .thenBy { it.path.lowercase(Locale.getDefault()) }
+            )
     }
 
+    private fun resolveModuleData(moduleName: String, moduleDir: File): ModuleData? {
+        val commonMainPath = File(moduleDir, "src/commonMain")
+        val mainPath = File(moduleDir, "src/main")
+
+        return when {
+            commonMainPath.isDirectory -> ModuleData(
+                name = moduleName,
+                path = commonMainPath.path.toCanonicalPathOrSame(),
+                isCMP = true,
+            )
+            mainPath.isDirectory -> ModuleData(
+                name = moduleName,
+                path = mainPath.path.toCanonicalPathOrSame(),
+                isCMP = false,
+            )
+            else -> null
+        }
+    }
+
+    private fun File.hasGradleBuildFile(): Boolean {
+        return File(this, "build.gradle").isFile || File(this, "build.gradle.kts").isFile
+    }
+
+    private fun String.toCanonicalPathOrSame(): String {
+        return try {
+            File(this).canonicalPath
+        } catch (_: IOException) {
+            this
+        }
+    }
+
+    private fun String.toCanonicalFileOrNull(): File? {
+        return try {
+            File(this).canonicalFile
+        } catch (_: IOException) {
+            null
+        }
+    }
 }

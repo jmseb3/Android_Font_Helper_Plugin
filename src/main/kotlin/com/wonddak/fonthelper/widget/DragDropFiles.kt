@@ -60,11 +60,13 @@ fun DragDropFiles(
                 val data = event.dragData()
                 if (data is DragData.FilesList) {
                     val filePaths = data.readFiles()
+                    val seenFileNames = HashSet<String>()
                     for (filePath in filePaths) {
                         if (!filePath.isSupportedFontFile()) continue
                         val newPath = filePath.normalizeDroppedPath()
+                        val fileName = newPath.fileNameOnly()
+                        if (!seenFileNames.add(fileName)) continue
 
-                        val fileName = newPath.trimEnd('/').substringAfterLast('/').lowercase()
                         settings.checkType(fileName)?.let { (isItalic, weight) ->
                             if (isItalic) updateItalicFontList(weight, newPath)
                             else updateNormalFontList(weight, newPath)
@@ -130,4 +132,8 @@ fun DragDropFiles(
             )
         }
     }
+}
+
+private fun String.fileNameOnly(): String {
+    return trim().substringAfterLast('/').substringAfterLast('\\').lowercase()
 }

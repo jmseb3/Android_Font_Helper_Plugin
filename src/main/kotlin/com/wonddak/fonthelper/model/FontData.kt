@@ -80,6 +80,16 @@ data class FontData(
         index: Int,
         path: String
     ): FontData {
+        if (path.isBlank()) {
+            val current = normalFontPath.getOrNull(index) ?: return this
+            if (current.path.isBlank()) return this
+            val temp = normalFontPath.toMutableList()
+            temp[index] = null
+            return this.copy(normalFontPath = temp)
+        }
+        if (path.isNotBlank() && hasDuplicateFileName(path, index, isItalic = false)) return this
+        val currentPath = normalFontPath.getOrNull(index)?.path
+        if (currentPath == path || currentPath.isSameFontFileName(path)) return this
         val temp = normalFontPath.toMutableList()
         temp[index] = FontType.Normal(path, index)
         return this.copy(normalFontPath = temp)
@@ -92,6 +102,16 @@ data class FontData(
         index: Int,
         path: String
     ): FontData {
+        if (path.isBlank()) {
+            val current = italicFontPath.getOrNull(index) ?: return this
+            if (current.path.isBlank()) return this
+            val temp = italicFontPath.toMutableList()
+            temp[index] = null
+            return this.copy(italicFontPath = temp)
+        }
+        if (path.isNotBlank() && hasDuplicateFileName(path, index, isItalic = true)) return this
+        val currentPath = italicFontPath.getOrNull(index)?.path
+        if (currentPath == path || currentPath.isSameFontFileName(path)) return this
         val temp = italicFontPath.toMutableList()
         temp[index] = FontType.Italic(path, index)
         return this.copy(italicFontPath = temp)
@@ -117,5 +137,39 @@ data class FontData(
             return false
         }
         return true
+    }
+
+    private fun String?.isSameFontFileName(otherPath: String): Boolean {
+        if (this.isNullOrBlank() || otherPath.isBlank()) return false
+        val currentName = this.fileNameOnly()
+        val newName = otherPath.fileNameOnly()
+        return currentName.isNotBlank() && currentName == newName
+    }
+
+    private fun String.fileNameOnly(): String {
+        return trim().substringAfterLast('/').substringAfterLast('\\').lowercase()
+    }
+
+    private fun hasDuplicateFileName(path: String, index: Int, isItalic: Boolean): Boolean {
+        val targetName = path.fileNameOnly()
+        if (targetName.isBlank()) return false
+
+        val duplicatesInNormal = normalFontPath.anyIndexed { currentIndex, font ->
+            val isCurrentSlot = !isItalic && currentIndex == index
+            !isCurrentSlot && font?.path.isSameFontFileName(path)
+        }
+        if (duplicatesInNormal) return true
+
+        return italicFontPath.anyIndexed { currentIndex, font ->
+            val isCurrentSlot = isItalic && currentIndex == index
+            !isCurrentSlot && font?.path.isSameFontFileName(path)
+        }
+    }
+
+    private inline fun <T> List<T>.anyIndexed(predicate: (Int, T) -> Boolean): Boolean {
+        for (i in indices) {
+            if (predicate(i, get(i))) return true
+        }
+        return false
     }
 }

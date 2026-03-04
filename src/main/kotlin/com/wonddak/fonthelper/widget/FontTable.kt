@@ -153,11 +153,14 @@ private fun FontBox(
     ) { platformFile ->
         showFilePicker = false
         platformFile?.let {
-            onNewPath(it.path)
+            val newPath = it.path
+            if (!isSameFontFile(path, newPath)) {
+                onNewPath(newPath)
+            }
         }
     }
 
-    val callback = remember {
+    val callback = remember(path) {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
                 // Parse received data
@@ -166,7 +169,10 @@ private fun FontBox(
                     val filePaths = data.readFiles()
                     val filePath = filePaths.firstOrNull() ?: return false
                     if (filePath.isSupportedFontFile()) {
-                        onNewPath(filePath.normalizeDroppedPath())
+                        val newPath = filePath.normalizeDroppedPath()
+                        if (!isSameFontFile(path, newPath)) {
+                            onNewPath(newPath)
+                        }
                         return true
                     }
                 }
@@ -206,4 +212,12 @@ private fun FontBox(
             }
         }
     )
+}
+
+private fun isSameFontFile(currentPath: String, newPath: String): Boolean {
+    if (newPath.isBlank()) return true
+    if (currentPath == newPath) return true
+    val currentName = currentPath.trim().substringAfterLast('/').substringAfterLast('\\')
+    val newName = newPath.trim().substringAfterLast('/').substringAfterLast('\\')
+    return currentName.isNotBlank() && currentName.equals(newName, ignoreCase = true)
 }

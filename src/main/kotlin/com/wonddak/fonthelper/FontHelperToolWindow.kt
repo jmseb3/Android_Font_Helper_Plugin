@@ -66,7 +66,6 @@ private fun ToolWindow.addComposePanel(
     isLockable: Boolean = true,
     content: @Composable ComposePanel.() -> Unit,
 ) = ComposePanel().apply {
-    setBounds(x = 0, y = 0, width = 1000, height = 800)
     setContent {
         content()
     }

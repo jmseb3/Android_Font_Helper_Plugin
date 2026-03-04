@@ -10,8 +10,8 @@ import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -208,7 +208,7 @@ private fun FontBox(
                         showFilePicker = true
                     }
                 ) {
-                    Icon(Icons.Default.Build, null)
+                    Icon(Icons.Default.Edit, null)
                 }
             }
         }

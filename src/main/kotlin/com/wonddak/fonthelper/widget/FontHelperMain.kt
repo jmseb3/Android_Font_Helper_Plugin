@@ -25,6 +25,8 @@ import androidx.compose.material.TabRow
 import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Refresh
@@ -340,7 +342,7 @@ fun FontHelperMain(
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
-                                                            Icon(Icons.Default.Build, contentDescription = null)
+                                                            Icon(Icons.Default.AddCircle, contentDescription = null)
                                                             Text(" Import ZIP")
                                                         }
                                                         Button(
@@ -348,7 +350,7 @@ fun FontHelperMain(
                                                             enabled = !downloadingGoogleFont,
                                                             modifier = Modifier.fillMaxWidth()
                                                         ) {
-                                                            Icon(Icons.Default.Build, contentDescription = null)
+                                                            Icon(Icons.Default.Search, contentDescription = null)
                                                             Text(" Google Fonts (Beta)")
                                                         }
                                                     }
@@ -382,14 +384,14 @@ fun FontHelperMain(
                                                             onClick = { showDownloadedZipPicker = true },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
-                                                            Icon(Icons.Default.Build, contentDescription = null)
+                                                            Icon(Icons.Default.AddCircle, contentDescription = null)
                                                             Text(" Import ZIP")
                                                         }
                                                         Button(
                                                             onClick = { showGoogleFontsDialog = true },
                                                             enabled = !downloadingGoogleFont
                                                         ) {
-                                                            Icon(Icons.Default.Build, contentDescription = null)
+                                                            Icon(Icons.Default.Search, contentDescription = null)
                                                             Text(" Google Fonts (Beta)")
                                                         }
                                                     }

@@ -1,54 +1,60 @@
-import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
-import org.jetbrains.intellij.platform.gradle.tasks.VerifyPluginTask.FailureLevel
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
-val localIdePathProvider = providers.gradleProperty("localIdePath")
-val targetAndroidStudioVersionProvider = providers.gradleProperty("androidStudioVersion")
-    .orElse(libs.versions.androidStudioTarget.get())
+import org.jetbrains.changelog.Changelog
+import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    alias(libs.plugins.intellij.platform)
-    alias(libs.plugins.jvm)
-    alias(libs.plugins.compose.plugin)
-    alias(libs.plugins.compose)
+    id("java") // Java support
+    alias(libs.plugins.kotlin) // Kotlin support
+    alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
+    alias(libs.plugins.changelog) // Gradle Changelog Plugin
+    alias(libs.plugins.composeCompiler) // Gradle Compose Compiler Plugin
 }
 
-group = "com.wonddak"
-version = "2.2.0"
+group = providers.gradleProperty("pluginGroup").get()
+version = providers.gradleProperty("pluginVersion").get()
 
-repositories {
-    mavenCentral()
-    google()
-    intellijPlatform {
-        defaultRepositories()
+kotlin {
+    jvmToolchain(21)
+
+    compilerOptions {
+        freeCompilerArgs.addAll(
+            listOf(
+                "-opt-in=androidx.compose.foundation.ExperimentalFoundationApi"
+            )
+        )
     }
 }
 
-configurations.configureEach {
-    exclude(group = "org.jetbrains.runtime", module = "jbr-api")
-    exclude(group = "org.slf4j", module = "slf4j-api")
+repositories {
+    mavenCentral()
+    // IntelliJ Platform Gradle Plugin Repositories Extension -
+    // read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-repositories-extension.html
+    intellijPlatform {
+        defaultRepositories()
+    }
+    // Needed for tests
+    google()
 }
 
 dependencies {
-    compileOnly(compose.desktop.currentOs)
-    compileOnly(libs.compose.desktop.jvm)
-    compileOnly(libs.compose.material.icons.core.desktop)
-
     implementation(libs.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
 
     intellijPlatform {
-        // And Read : https://plugins.jetbrains.com/docs/intellij/android-studio-releases-list.html#2024
-        if (localIdePathProvider.isPresent) {
-            local(localIdePathProvider.get())
-        } else {
-            androidStudio(targetAndroidStudioVersionProvider.get())
-        }
+        create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
 
         // Compose support dependencies
         @Suppress("UnstableApiUsage")
         composeUI()
+
+        // Plugin Dependencies. Uses `platformBundledPlugins` property from the gradle.properties file for bundled IntelliJ Platform plugins.
+        bundledPlugins(providers.gradleProperty("platformBundledPlugins").map { it.split(',') })
+
+        // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file for plugin from JetBrains Marketplace.
+        plugins(providers.gradleProperty("platformPlugins").map { it.split(',') })
+
+        testFramework(TestFrameworkType.Platform)
 
         zipSigner()
     }
@@ -60,54 +66,77 @@ dependencies {
 intellijPlatform {
     buildSearchableOptions = false
     pluginConfiguration {
-        name = "FontHelper"
+        name = providers.gradleProperty("pluginName")
+        version = providers.gradleProperty("pluginVersion")
+
+        // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
+        description = providers.fileContents(layout.projectDirectory.file("README.md")).asText.map {
+            val start = "<!-- Plugin description -->"
+            val end = "<!-- Plugin description end -->"
+
+            with(it.lines()) {
+                if (!containsAll(listOf(start, end))) {
+                    throw GradleException("Plugin description section not found in README.md:\n$start ... $end")
+                }
+                subList(indexOf(start) + 1, indexOf(end)).joinToString("\n").let(::markdownToHTML)
+            }
+        }
+
+        val changelog = project.changelog // local variable for configuration cache compatibility
+        // Get the latest available change notes from the changelog file
+        changeNotes = providers.gradleProperty("pluginVersion").map { pluginVersion ->
+            with(changelog) {
+                renderItem(
+                    (getOrNull(pluginVersion) ?: getUnreleased())
+                        .withHeader(false)
+                        .withEmptySections(false),
+                    Changelog.OutputType.HTML,
+                )
+            }
+        }
+
         ideaVersion {
-            sinceBuild = "252"
+            sinceBuild = providers.gradleProperty("pluginSinceBuild")
             untilBuild = provider { null }
         }
     }
-    pluginVerification {
-        failureLevel = listOf(
-            FailureLevel.COMPATIBILITY_WARNINGS,
-            FailureLevel.COMPATIBILITY_PROBLEMS,
-            FailureLevel.DEPRECATED_API_USAGES,
-            FailureLevel.OVERRIDE_ONLY_API_USAGES,
-            FailureLevel.NON_EXTENDABLE_API_USAGES,
-            FailureLevel.PLUGIN_STRUCTURE_WARNINGS,
-            FailureLevel.MISSING_DEPENDENCIES,
-            FailureLevel.INVALID_PLUGIN,
-            FailureLevel.NOT_DYNAMIC,
-        )
-        ides {
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2025.2") {}
-            create(IntelliJPlatformType.AndroidStudio, libs.versions.androidStudioTarget.get()) {}
-        }
-    }
     signing {
-        certificateChain = System.getenv("CERTIFICATE_CHAIN")
-        privateKey = System.getenv("PRIVATE_KEY")
-        password = System.getenv("PRIVATE_KEY_PASSWORD")
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
     }
 
     publishing {
-        token = System.getenv("PUBLISH_TOKEN")
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+        // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
+        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
+        // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
+        channels = providers.gradleProperty("pluginVersion")
+            .map { listOf(it.substringAfter('-', "").substringBefore('.').ifEmpty { "default" }) }
+    }
+
+    pluginVerification {
+        ides {
+            create(providers.gradleProperty("platformType"), providers.gradleProperty("platformVersion"))
+        }
     }
 }
 
-java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
-}
-
-kotlin {
-    jvmToolchain(21)
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_21)
-        freeCompilerArgs.add("-Xjvm-default=all")
-    }
+// Configure Gradle Changelog Plugin - read more: https://github.com/JetBrains/gradle-changelog-plugin
+changelog {
+    groups.empty()
+    repositoryUrl = providers.gradleProperty("pluginRepositoryUrl")
 }
 
 tasks {
+    wrapper {
+        gradleVersion = providers.gradleProperty("gradleVersion").get()
+    }
+
+    publishPlugin {
+        dependsOn(patchChangelog)
+    }
+
     // workaround for https://youtrack.jetbrains.com/issue/IDEA-285839/Classpath-clash-when-using-coroutines-in-an-unbundled-IntelliJ-plugin
     buildPlugin {
         exclude { "coroutines" in it.name }
@@ -116,3 +145,6 @@ tasks {
         exclude { "coroutines" in it.name }
     }
 }
+
+// do not run Plugin Verifier in the template itself
+tasks.getByName("verifyPlugin").enabled = false

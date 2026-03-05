@@ -291,10 +291,8 @@ fun FontHelperMain(
                                                         }
                                                         Button(
                                                             onClick = {
-                                                                IdeFileChooserUtil.chooseSingleFile(
+                                                                IdeFileChooserUtil.chooseSingleZipFile(
                                                                     project = project,
-                                                                    title = "Select Downloaded Google Fonts ZIP",
-                                                                    allowedExtensions = setOf("zip")
                                                                 ) { pickedPath ->
                                                                     scope.launch {
                                                                         downloadingGoogleFont = true
@@ -378,10 +376,8 @@ fun FontHelperMain(
                                                         }
                                                         Button(
                                                             onClick = {
-                                                                IdeFileChooserUtil.chooseSingleFile(
+                                                                IdeFileChooserUtil.chooseSingleZipFile(
                                                                     project = project,
-                                                                    title = "Select Downloaded Google Fonts ZIP",
-                                                                    allowedExtensions = setOf("zip")
                                                                 ) { pickedPath ->
                                                                     scope.launch {
                                                                         downloadingGoogleFont = true

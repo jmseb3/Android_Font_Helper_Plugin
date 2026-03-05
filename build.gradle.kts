@@ -38,6 +38,11 @@ repositories {
     google()
 }
 
+configurations.configureEach {
+    exclude(group = "org.jetbrains.runtime", module = "jbr-api")
+    exclude(group = "org.slf4j", module = "slf4j-api")
+}
+
 dependencies {
     implementation(compose.material)
     implementation(libs.compose.material.icons.core.desktop)

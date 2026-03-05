@@ -196,10 +196,8 @@ private fun FontBox(
             } else {
                 IconButton(
                     onClick = {
-                        IdeFileChooserUtil.chooseSingleFile(
+                        IdeFileChooserUtil.chooseSingleFontFile(
                             project = project,
-                            title = "Select Font File",
-                            allowedExtensions = setOf("ttf", "otf")
                         ) { newPath ->
                             if (!isSameFontFile(path, newPath)) {
                                 onNewPath(newPath)

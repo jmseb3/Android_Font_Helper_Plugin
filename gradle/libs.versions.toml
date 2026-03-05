@@ -2,17 +2,22 @@
 kotlin = "2.2.20"
 intellij = "2.11.0"
 changelog = "2.2.1"
+compose = "1.9.0"
 
 serializationJson = "1.8.1"
 ktor = "3.0.0"
+composeMaterialIcons = "1.7.3"
 
 [libraries]
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+compose-material-icons-core-desktop = { group = "org.jetbrains.compose.material", name = "material-icons-core-desktop", version.ref = "composeMaterialIcons" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

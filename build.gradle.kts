@@ -3,11 +3,13 @@ import org.jetbrains.changelog.markdownToHTML
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 
 plugins {
-    id("java") // Java support
-    alias(libs.plugins.kotlin) // Kotlin support
-    alias(libs.plugins.intelliJPlatform) // IntelliJ Platform Gradle Plugin
-    alias(libs.plugins.changelog) // Gradle Changelog Plugin
-    alias(libs.plugins.composeCompiler) // Gradle Compose Compiler Plugin
+    id("java")
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.intelliJPlatform)
+    alias(libs.plugins.changelog)
+    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 group = providers.gradleProperty("pluginGroup").get()
@@ -37,6 +39,9 @@ repositories {
 }
 
 dependencies {
+    implementation(compose.material)
+    implementation(libs.compose.material.icons.core.desktop)
+
     implementation(libs.serialization.json)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)

@@ -12,7 +12,6 @@ import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.FontType
 import java.io.File
-import java.util.*
 
 /**
  * Font Helper Object
@@ -83,6 +82,8 @@ object FontUtil {
         fontData: FontData
     ) {
         var generatedFilePath: String? = null
+        // Build the class content once before mutating VFS state so write steps stay focused on I/O.
+        val classContent = buildFontFamilyContent(fontData)
         ApplicationManager.getApplication().runWriteAction {
             if (fontData.selectedModule == null) {
                 return@runWriteAction
@@ -97,20 +98,15 @@ object FontUtil {
                 ?: return@runWriteAction
 
             WriteAction.run<Throwable> {
-                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
-                var psiFile = psiDirectory.findFile(classFileName)
-                psiFile?.delete()
-                psiFile = psiDirectory.createFile(classFileName)
-                psiFile.virtualFile.setBinaryContent(makeContentString(fontData).toByteArray())
-
-                //Refresh Class File
-                VfsUtil.markDirtyAndRefresh(true,true,true,psiFile.virtualFile)
+                copyFontResources(fontData)
+                val psiFile = writeGeneratedClassFile(
+                    project = project,
+                    directory = directory,
+                    classFileName = classFileName,
+                    content = classContent,
+                )
                 generatedFilePath = psiFile.virtualFile.path
-
-                //Refresh Font Dir
-                LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
-                    VfsUtil.markDirtyAndRefresh(true,true,true,  it)
-                }
+                refreshFontDirectory(fontData)
             }
 
             // Refresh project view/index after generated sources and copied fonts are added.
@@ -143,15 +139,16 @@ object FontUtil {
         VirtualFileManager.getInstance().asyncRefresh(null)
     }
 
-    private fun makeContentString(fontData: FontData): String {
-
+    private fun buildFontFamilyContent(fontData: FontData): String {
         val st = StringBuilder()
         if (fontData.packageName.isNotEmpty()) {
             st.append("package ")
             st.append(fontData.packageName)
             st.append("\n")
         }
-        val lowerName = fontData.fileName.lowercase()
+        val resourceBaseName = fontData.fileName.toSnakeCase()
+        val valueName = fontData.fileName.toLowerCamelCase()
+        val functionName = fontData.fileName.toUpperCamelCase()
         st.appendLine()
         fontData.selectedModule?.let { module ->
             val isCMPProject = module.isCMP
@@ -163,13 +160,13 @@ object FontUtil {
 
                 st.appendLine("import ${module.importModuleName}.generated.resources.Res")
                 fontData.totalFontPath.forEach { font ->
-                    val fontName = font.makeFontFileName(lowerName, false)
+                    val fontName = font.makeFontFileName(resourceBaseName, false)
                     st.appendLine("import ${module.importModuleName}.generated.resources.${fontName}")
                 }
                 st.appendLine("import org.jetbrains.compose.resources.Font")
                 st.appendLine()
                 st.appendLine("@Composable")
-                st.appendLine("fun get${lowerName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}Font(): FontFamily {")
+                st.appendLine("fun get${functionName}Font(): FontFamily {")
                 st.appendLine("\treturn FontFamily(")
             } else {
                 st.appendLine("import androidx.compose.ui.text.font.Font")
@@ -177,12 +174,11 @@ object FontUtil {
                 st.appendLine("import androidx.compose.ui.text.font.FontStyle")
                 st.appendLine("import androidx.compose.ui.text.font.FontWeight")
                 st.appendLine()
-                st.appendLine("val $lowerName = FontFamily(")
+                st.appendLine("val $valueName = FontFamily(")
             }
 
             fontData.totalFontPath.forEach { font ->
-                copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
-                st.appendLine(makeFontString(isCMPProject, lowerName, font))
+                st.appendLine(makeFontString(isCMPProject, resourceBaseName, font))
             }
 
             if (isCMPProject) {
@@ -197,10 +193,38 @@ object FontUtil {
         return st.toString().trimIndent()
     }
 
+    private fun copyFontResources(fontData: FontData) {
+        val lowerName = fontData.fileName.toSnakeCase()
+        fontData.totalFontPath.forEach { font ->
+            copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
+        }
+    }
+
+    private fun writeGeneratedClassFile(
+        project: Project,
+        directory: com.intellij.openapi.vfs.VirtualFile,
+        classFileName: String,
+        content: String,
+    ) = PsiDirectoryFactory.getInstance(project).createDirectory(directory).run {
+        // Replace the generated file atomically from the plugin's point of view to keep output deterministic.
+        var psiFile = findFile(classFileName)
+        psiFile?.delete()
+        psiFile = createFile(classFileName)
+        psiFile.virtualFile.setBinaryContent(content.toByteArray())
+        VfsUtil.markDirtyAndRefresh(true, true, true, psiFile.virtualFile)
+        psiFile
+    }
+
+    private fun refreshFontDirectory(fontData: FontData) {
+        LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
+            VfsUtil.markDirtyAndRefresh(true, true, true, it)
+        }
+    }
+
     private fun makeFontString(isCMPProject: Boolean, name: String, fontType: FontType): String {
         val st = StringBuilder()
         val type = getWeightTextByIndex(fontType.weight)
-        val fontFile = "${name.lowercase()}_${type.lowercase()}"
+        val fontFile = "${name.toSnakeCase()}_${type.toSnakeCase()}"
         val isItalic = fontType is FontType.Italic
 
         if (isCMPProject) {
@@ -229,5 +253,35 @@ object FontUtil {
         return st.toString()
     }
 
+    private fun String.toUpperCamelCase(): String {
+        val trimmed = trim()
+        if (trimmed.isEmpty()) return ""
+
+        val normalized = trimmed
+            .replace(Regex("[^A-Za-z0-9]+"), " ")
+            .trim()
+        if (normalized.isEmpty()) return ""
+
+        val parts = normalized.split(Regex("\\s+"))
+        return buildString {
+            parts.forEach { part ->
+                append(part.lowercase().replaceFirstChar { it.uppercase() })
+            }
+        }
+    }
+
+    private fun String.toLowerCamelCase(): String {
+        val upperCamel = toUpperCamelCase()
+        return upperCamel.replaceFirstChar { it.lowercase() }
+    }
+
+    private fun String.toSnakeCase(): String {
+        return trim()
+            .replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
+            .replace(Regex("([A-Z]+)([A-Z][a-z])"), "$1_$2")
+            .replace(Regex("[^A-Za-z0-9]+"), "_")
+            .trim('_')
+            .lowercase()
+    }
 
 }

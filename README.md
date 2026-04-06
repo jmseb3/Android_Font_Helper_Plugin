@@ -1,15 +1,28 @@
 # Font Helper Plugin
 
-`Font Helper` generates Compose `FontFamily` code and copies font files into the correct module path for:
-- Android Compose
-- Compose Multiplatform
+<!-- Plugin description -->
+**Compose FontFamily generator for Android Studio and IntelliJ.**
 
-Current release line: **2.1.x**
+Font Helper generates Kotlin `FontFamily` code and automatically copies font files into the correct module paths for Android Compose and Compose Multiplatform projects.
+
+**Key features:**
+
+- Drag & drop font import (`.ttf`, `.otf`)
+- ZIP import with automatic weight/style matching and conflict resolution
+- Google Fonts import flow (Beta)
+- Package name auto-detection with one-click generation
+- Setup/Fonts tab layout to reduce long scrolling in the tool window
+- Automatic module list refresh after Gradle sync completion
+
+**Resources:**
+
+- [GitHub Repository](https://github.com/jmseb3/Android_Font_Helper_Plugin) – Source code & documentation
+<!-- Plugin description end -->
 
 ## Install
 
 Search **Font Helper** in JetBrains Marketplace, or install from:
-- [https://plugins.jetbrains.com/plugin/21596-fonthelper](https://plugins.jetbrains.com/plugin/21596-fonthelper)
+- [Plugin page](https://plugins.jetbrains.com/plugin/21596)
 
 ## Open Tool Window
 
@@ -62,7 +75,7 @@ If multiple files match the same slot, Font Helper opens a conflict dialog with 
 ![google-duplicate](./screenshot/02_2_from_google_fonts_duplicate_dialog.png)
 
 
-## Google Fonts (Beta)
+## Google Fonts
 
 Google import uses `download/list?family=...` metadata first, then downloads only selected files.
 

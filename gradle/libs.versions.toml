@@ -1,30 +1,23 @@
 [versions]
 kotlin = "2.2.20"
-compose = "1.9.0"
 intellij = "2.11.0"
-mpfilepicker = "3.1.0"
+changelog = "2.2.1"
+compose = "1.9.0"
+
 serializationJson = "1.8.1"
 ktor = "3.0.0"
-androidStudioTarget = "2025.2.3.9"
 composeMaterialIcons = "1.7.3"
-
-
-[plugins]
-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-compose-plugin = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-compose = { id = "org.jetbrains.compose", version.ref = "compose" }
-intellij-platform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }
 
 [libraries]
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serializationJson" }
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
-mpfilepicker = { group = "com.darkrockstudios", name = "mpfilepicker", version.ref = "mpfilepicker" }
-compose-desktop-jvm = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm", version.ref = "compose" }
-compose-desktop-jvm-linux-arm64 = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm-linux-arm64", version.ref = "compose" }
-compose-desktop-jvm-linux-x64 = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm-linux-x64", version.ref = "compose" }
-compose-desktop-jvm-macos-arm64 = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm-macos-arm64", version.ref = "compose" }
-compose-desktop-jvm-macos-x64 = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm-macos-x64", version.ref = "compose" }
-compose-desktop-jvm-windows-x64 = { group = "org.jetbrains.compose.desktop", name = "desktop-jvm-windows-x64", version.ref = "compose" }
-compose-material-icons-extended-desktop = { group = "org.jetbrains.compose.material", name = "material-icons-extended-desktop", version.ref = "composeMaterialIcons" }
 compose-material-icons-core-desktop = { group = "org.jetbrains.compose.material", name = "material-icons-core-desktop", version.ref = "composeMaterialIcons" }
+
+[plugins]
+changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+intelliJPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellij" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

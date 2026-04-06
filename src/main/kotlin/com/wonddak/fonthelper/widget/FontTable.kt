@@ -24,12 +24,16 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.darkrockstudios.libraries.mpfilepicker.FilePicker
+import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontType
+import com.wonddak.fonthelper.theme.icon.Folder
+import com.wonddak.fonthelper.theme.icon.FontHelperIcons
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.IdeFileChooserUtil
 
 @Composable
 fun FontTable(
+    project: Project,
     normalFontList: List<FontType.Normal?>,
     italicFontList: List<FontType.Italic?>,
     updateNormalFontList: (Int, String) -> Unit,
@@ -80,11 +84,13 @@ fun FontTable(
                             style = MaterialTheme.typography.body2
                         )
                         FontBox(
+                            project = project,
                             modifier = Modifier.weight(1f),
                             path = normalFontList[index]?.path ?: "",
                             onNewPath = { updateNormalFontList(index, it) }
                         )
                         FontBox(
+                            project = project,
                             modifier = Modifier.weight(1f),
                             path = italicFontList[index]?.path ?: "",
                             onNewPath = { updateItalicFontList(index, it) }
@@ -117,6 +123,7 @@ fun FontTable(
                                 style = MaterialTheme.typography.caption
                             )
                             FontBox(
+                                project = project,
                                 modifier = Modifier.fillMaxWidth(),
                                 path = normalFontList[index]?.path ?: "",
                                 onNewPath = { updateNormalFontList(index, it) }
@@ -126,6 +133,7 @@ fun FontTable(
                                 style = MaterialTheme.typography.caption
                             )
                             FontBox(
+                                project = project,
                                 modifier = Modifier.fillMaxWidth(),
                                 path = italicFontList[index]?.path ?: "",
                                 onNewPath = { updateItalicFontList(index, it) }
@@ -141,26 +149,11 @@ fun FontTable(
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
 private fun FontBox(
+    project: Project,
     modifier: Modifier,
     path: String,
     onNewPath: (path: String) -> Unit
 ) {
-    var showFilePicker by remember { mutableStateOf(false) }
-
-    val fileType = listOf("ttf", "otf")
-    FilePicker(
-        show = showFilePicker,
-        fileExtensions = fileType,
-    ) { platformFile ->
-        showFilePicker = false
-        platformFile?.let {
-            val newPath = it.path
-            if (!isSameFontFile(path, newPath)) {
-                onNewPath(newPath)
-            }
-        }
-    }
-
     val callback = remember(path) {
         object : DragAndDropTarget {
             override fun onDrop(event: DragAndDropEvent): Boolean {
@@ -205,10 +198,16 @@ private fun FontBox(
             } else {
                 IconButton(
                     onClick = {
-                        showFilePicker = true
+                        IdeFileChooserUtil.chooseSingleFontFile(
+                            project = project,
+                        ) { newPath ->
+                            if (!isSameFontFile(path, newPath)) {
+                                onNewPath(newPath)
+                            }
+                        }
                     }
                 ) {
-                    Icon(Icons.Default.Edit, null)
+                    Icon(FontHelperIcons.Folder, null)
                 }
             }
         }

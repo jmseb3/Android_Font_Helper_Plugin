@@ -83,6 +83,7 @@ object FontUtil {
         fontData: FontData
     ) {
         var generatedFilePath: String? = null
+        val classContent = buildFontFamilyContent(fontData)
         ApplicationManager.getApplication().runWriteAction {
             if (fontData.selectedModule == null) {
                 return@runWriteAction
@@ -97,20 +98,15 @@ object FontUtil {
                 ?: return@runWriteAction
 
             WriteAction.run<Throwable> {
-                val psiDirectory = PsiDirectoryFactory.getInstance(project).createDirectory(directory)
-                var psiFile = psiDirectory.findFile(classFileName)
-                psiFile?.delete()
-                psiFile = psiDirectory.createFile(classFileName)
-                psiFile.virtualFile.setBinaryContent(makeContentString(fontData).toByteArray())
-
-                //Refresh Class File
-                VfsUtil.markDirtyAndRefresh(true,true,true,psiFile.virtualFile)
+                copyFontResources(fontData)
+                val psiFile = writeGeneratedClassFile(
+                    project = project,
+                    directory = directory,
+                    classFileName = classFileName,
+                    content = classContent,
+                )
                 generatedFilePath = psiFile.virtualFile.path
-
-                //Refresh Font Dir
-                LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
-                    VfsUtil.markDirtyAndRefresh(true,true,true,  it)
-                }
+                refreshFontDirectory(fontData)
             }
 
             // Refresh project view/index after generated sources and copied fonts are added.
@@ -143,8 +139,7 @@ object FontUtil {
         VirtualFileManager.getInstance().asyncRefresh(null)
     }
 
-    private fun makeContentString(fontData: FontData): String {
-
+    private fun buildFontFamilyContent(fontData: FontData): String {
         val st = StringBuilder()
         if (fontData.packageName.isNotEmpty()) {
             st.append("package ")
@@ -181,7 +176,6 @@ object FontUtil {
             }
 
             fontData.totalFontPath.forEach { font ->
-                copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
                 st.appendLine(makeFontString(isCMPProject, lowerName, font))
             }
 
@@ -195,6 +189,33 @@ object FontUtil {
         }
 
         return st.toString().trimIndent()
+    }
+
+    private fun copyFontResources(fontData: FontData) {
+        val lowerName = fontData.fileName.lowercase()
+        fontData.totalFontPath.forEach { font ->
+            copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
+        }
+    }
+
+    private fun writeGeneratedClassFile(
+        project: Project,
+        directory: com.intellij.openapi.vfs.VirtualFile,
+        classFileName: String,
+        content: String,
+    ) = PsiDirectoryFactory.getInstance(project).createDirectory(directory).run {
+        var psiFile = findFile(classFileName)
+        psiFile?.delete()
+        psiFile = createFile(classFileName)
+        psiFile.virtualFile.setBinaryContent(content.toByteArray())
+        VfsUtil.markDirtyAndRefresh(true, true, true, psiFile.virtualFile)
+        psiFile
+    }
+
+    private fun refreshFontDirectory(fontData: FontData) {
+        LocalFileSystem.getInstance().findFileByPath(fontData.saveFontPath)?.let {
+            VfsUtil.markDirtyAndRefresh(true, true, true, it)
+        }
     }
 
     private fun makeFontString(isCMPProject: Boolean, name: String, fontType: FontType): String {

@@ -37,17 +37,17 @@ import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
 import com.wonddak.fonthelper.theme.WidgetTheme
-import com.wonddak.fonthelper.util.FontSlotKey
 import com.wonddak.fonthelper.util.FontUtil
-import com.wonddak.fonthelper.util.GoogleFileSelectionState
 import com.wonddak.fonthelper.util.GoogleFontsUtil
 import com.wonddak.fonthelper.util.IdeFileChooserUtil
-import com.wonddak.fonthelper.util.ImportConflict
+import com.wonddak.fonthelper.util.GoogleFileSelectionState
 import com.wonddak.fonthelper.util.ImportConflictSelectionState
 import com.wonddak.fonthelper.util.PackageNameResolver
-import com.wonddak.fonthelper.util.analyzeImportedFonts
 import com.wonddak.fonthelper.util.applyImportedFonts
+import com.wonddak.fonthelper.util.prepareGoogleFontSelectionResult
+import com.wonddak.fonthelper.util.prepareZipImportResult
 import com.wonddak.fonthelper.util.removeManagedDownloadedPaths
+import com.wonddak.fonthelper.util.resolveDownloadedAssignments
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -124,32 +124,10 @@ fun FontHelperMain(
                         try {
                             val downloaded = GoogleFontsUtil.importFontsFromZip(File(pickedPath))
                             val settings = com.wonddak.fonthelper.setting.FontMatchSettingsService.getInstance().state
-                            val analysis = analyzeImportedFonts(downloaded, settings)
-                            val autoAssignments = analysis.groups
-                                .filterValues { it.size == 1 }
-                                .mapValues { it.value.first() }
-                            val updated = applyImportedFonts(fontData, autoAssignments)
-                            fontData = updated
-
-                            val conflicts = analysis.groups
-                                .filterValues { it.size > 1 }
-                                .entries
-                                .sortedBy { it.key.displayText() }
-                                .map { (slot, files) -> ImportConflict(slot, files.sortedBy { it.name.lowercase() }) }
-
-                            if (analysis.matchedCount == 0) {
-                                googleImportMessage = "ZIP imported, but no variants matched current keywords."
-                            } else if (conflicts.isEmpty()) {
-                                googleImportMessage = "ZIP imported. ${analysis.matchedCount} variants mapped."
-                            } else {
-                                conflictSelectionState = ImportConflictSelectionState(
-                                    sourceLabel = "ZIP",
-                                    currentFontData = updated,
-                                    conflicts = conflicts,
-                                )
-                                googleImportMessage =
-                                    "ZIP imported. ${autoAssignments.size} auto-mapped, ${conflicts.size} conflicts need selection."
-                            }
+                            val result = prepareZipImportResult(fontData, downloaded, settings)
+                            fontData = result.updatedFontData
+                            conflictSelectionState = result.conflictSelectionState
+                            googleImportMessage = result.message
                         } catch (e: Exception) {
                             googleImportMessage = "ZIP import failed: ${e.message ?: "Unknown error"}"
                         } finally {
@@ -238,38 +216,22 @@ fun FontHelperMain(
                                 try {
                                     val settings = com.wonddak.fonthelper.setting.FontMatchSettingsService.getInstance().state
                                     val refs = GoogleFontsUtil.fetchFamilyFontFileRefs(family)
-                                    // Google Fonts may expose multiple files for the same slot, so selection is split
-                                    // into an auto-apply path and a follow-up conflict dialog path.
-                                    val slotCandidates = refs
-                                        .mapNotNull { ref ->
-                                            val shortName = ref.filename.substringAfterLast('/').substringAfterLast('\\')
-                                            val match = settings.checkType(shortName.lowercase()) ?: return@mapNotNull null
-                                            FontSlotKey(isItalic = match.first, weight = match.second) to ref
-                                        }
-                                        .groupBy(keySelector = { it.first }, valueTransform = { it.second })
-                                        .toSortedMap(compareBy<FontSlotKey> { it.isItalic }.thenBy { it.weight })
+                                    val result = prepareGoogleFontSelectionResult(family, refs, settings)
 
-                                    if (slotCandidates.isEmpty()) {
-                                        googleImportMessage =
-                                            "\"$family\" list loaded, but no variants matched current keywords."
-                                    } else {
-                                        val normalizedBySlot = slotCandidates.mapValues { (_, list) ->
-                                            list.distinctBy { it.url }.sortedBy { it.filename.lowercase() }
+                                    when {
+                                        result.selectionState != null -> {
+                                            googleFileSelectionState = result.selectionState
+                                            googleImportMessage = result.message
                                         }
-                                        val autoSelectedBySlot = normalizedBySlot
-                                            .filterValues { it.size == 1 }
-                                            .mapValues { (_, refsBySlot) -> refsBySlot.first() }
-                                        val conflictCandidatesBySlot = normalizedBySlot
-                                            .filterValues { it.size > 1 }
-
-                                        if (conflictCandidatesBySlot.isEmpty()) {
+                                        result.autoSelectedBySlot.isNotEmpty() -> {
                                             val downloadedByUrl = GoogleFontsUtil.downloadFamilyFontRefs(
                                                 family = family,
-                                                refs = autoSelectedBySlot.values.distinctBy { it.url },
+                                                refs = result.autoSelectedBySlot.values.distinctBy { it.url },
                                             )
-                                            val assignments = autoSelectedBySlot.mapNotNull { (slot, ref) ->
-                                                downloadedByUrl[ref.url]?.let { slot to it }
-                                            }.toMap()
+                                            val assignments = resolveDownloadedAssignments(
+                                                result.autoSelectedBySlot,
+                                                downloadedByUrl,
+                                            )
                                             val updated = applyImportedFonts(fontData, assignments)
                                             fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {
                                                 updated.copy(fileName = family.toSafeClassName())
@@ -278,14 +240,9 @@ fun FontHelperMain(
                                             }
                                             googleImportMessage =
                                                 "\"$family\" imported. ${assignments.size} variants mapped."
-                                        } else {
-                                            googleFileSelectionState = GoogleFileSelectionState(
-                                                family = family,
-                                                autoSelectedBySlot = autoSelectedBySlot,
-                                                conflictCandidatesBySlot = conflictCandidatesBySlot,
-                                            )
-                                            googleImportMessage =
-                                                "\"$family\" list loaded. ${autoSelectedBySlot.size} auto-selected, choose ${conflictCandidatesBySlot.size} conflict slots."
+                                        }
+                                        else -> {
+                                            googleImportMessage = result.message
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -314,9 +271,7 @@ fun FontHelperMain(
                                         family = state.family,
                                         refs = selectedRefs,
                                     )
-                                    val assignments = allSelections.mapNotNull { (slot, ref) ->
-                                        downloadedByUrl[ref.url]?.let { slot to it }
-                                    }.toMap()
+                                    val assignments = resolveDownloadedAssignments(allSelections, downloadedByUrl)
 
                                     val updated = applyImportedFonts(fontData, assignments)
                                     fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {

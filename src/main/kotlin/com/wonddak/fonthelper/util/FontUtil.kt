@@ -12,7 +12,6 @@ import com.intellij.psi.impl.file.PsiDirectoryFactory
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.FontType
 import java.io.File
-import java.util.*
 
 /**
  * Font Helper Object
@@ -147,7 +146,9 @@ object FontUtil {
             st.append(fontData.packageName)
             st.append("\n")
         }
-        val lowerName = fontData.fileName.lowercase()
+        val resourceBaseName = fontData.fileName.lowercase()
+        val valueName = fontData.fileName.toLowerCamelCase()
+        val functionName = fontData.fileName.toUpperCamelCase()
         st.appendLine()
         fontData.selectedModule?.let { module ->
             val isCMPProject = module.isCMP
@@ -159,13 +160,13 @@ object FontUtil {
 
                 st.appendLine("import ${module.importModuleName}.generated.resources.Res")
                 fontData.totalFontPath.forEach { font ->
-                    val fontName = font.makeFontFileName(lowerName, false)
+                    val fontName = font.makeFontFileName(resourceBaseName, false)
                     st.appendLine("import ${module.importModuleName}.generated.resources.${fontName}")
                 }
                 st.appendLine("import org.jetbrains.compose.resources.Font")
                 st.appendLine()
                 st.appendLine("@Composable")
-                st.appendLine("fun get${lowerName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }}Font(): FontFamily {")
+                st.appendLine("fun get${functionName}Font(): FontFamily {")
                 st.appendLine("\treturn FontFamily(")
             } else {
                 st.appendLine("import androidx.compose.ui.text.font.Font")
@@ -173,11 +174,11 @@ object FontUtil {
                 st.appendLine("import androidx.compose.ui.text.font.FontStyle")
                 st.appendLine("import androidx.compose.ui.text.font.FontWeight")
                 st.appendLine()
-                st.appendLine("val $lowerName = FontFamily(")
+                st.appendLine("val $valueName = FontFamily(")
             }
 
             fontData.totalFontPath.forEach { font ->
-                st.appendLine(makeFontString(isCMPProject, lowerName, font))
+                st.appendLine(makeFontString(isCMPProject, resourceBaseName, font))
             }
 
             if (isCMPProject) {
@@ -252,5 +253,26 @@ object FontUtil {
         return st.toString()
     }
 
+    private fun String.toUpperCamelCase(): String {
+        val trimmed = trim()
+        if (trimmed.isEmpty()) return ""
+
+        val normalized = trimmed
+            .replace(Regex("[^A-Za-z0-9]+"), " ")
+            .trim()
+        if (normalized.isEmpty()) return ""
+
+        val parts = normalized.split(Regex("\\s+"))
+        return buildString {
+            parts.forEach { part ->
+                append(part.lowercase().replaceFirstChar { it.uppercase() })
+            }
+        }
+    }
+
+    private fun String.toLowerCamelCase(): String {
+        val upperCamel = toUpperCamelCase()
+        return upperCamel.replaceFirstChar { it.lowercase() }
+    }
 
 }

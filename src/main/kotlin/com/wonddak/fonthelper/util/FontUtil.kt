@@ -146,7 +146,7 @@ object FontUtil {
             st.append(fontData.packageName)
             st.append("\n")
         }
-        val resourceBaseName = fontData.fileName.lowercase()
+        val resourceBaseName = fontData.fileName.toSnakeCase()
         val valueName = fontData.fileName.toLowerCamelCase()
         val functionName = fontData.fileName.toUpperCamelCase()
         st.appendLine()
@@ -194,7 +194,7 @@ object FontUtil {
     }
 
     private fun copyFontResources(fontData: FontData) {
-        val lowerName = fontData.fileName.lowercase()
+        val lowerName = fontData.fileName.toSnakeCase()
         fontData.totalFontPath.forEach { font ->
             copyFontFile(font.path, fontData.saveFontPath, font.makeFontFileName(lowerName))
         }
@@ -224,7 +224,7 @@ object FontUtil {
     private fun makeFontString(isCMPProject: Boolean, name: String, fontType: FontType): String {
         val st = StringBuilder()
         val type = getWeightTextByIndex(fontType.weight)
-        val fontFile = "${name.lowercase()}_${type.lowercase()}"
+        val fontFile = "${name.toSnakeCase()}_${type.toSnakeCase()}"
         val isItalic = fontType is FontType.Italic
 
         if (isCMPProject) {
@@ -273,6 +273,15 @@ object FontUtil {
     private fun String.toLowerCamelCase(): String {
         val upperCamel = toUpperCamelCase()
         return upperCamel.replaceFirstChar { it.lowercase() }
+    }
+
+    private fun String.toSnakeCase(): String {
+        return trim()
+            .replace(Regex("([a-z0-9])([A-Z])"), "$1_$2")
+            .replace(Regex("([A-Z]+)([A-Z][a-z])"), "$1_$2")
+            .replace(Regex("[^A-Za-z0-9]+"), "_")
+            .trim('_')
+            .lowercase()
     }
 
 }

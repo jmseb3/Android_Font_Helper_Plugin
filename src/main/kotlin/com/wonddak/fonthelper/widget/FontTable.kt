@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontType
+import com.wonddak.fonthelper.theme.icon.Folder
+import com.wonddak.fonthelper.theme.icon.FontHelperIcons
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.IdeFileChooserUtil
 
@@ -205,7 +207,7 @@ private fun FontBox(
                         }
                     }
                 ) {
-                    Icon(Icons.Default.Edit, null)
+                    Icon(FontHelperIcons.Folder, null)
                 }
             }
         }

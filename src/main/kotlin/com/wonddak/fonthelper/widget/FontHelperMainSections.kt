@@ -31,6 +31,9 @@ import androidx.compose.foundation.ScrollState
 import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
+import com.wonddak.fonthelper.theme.icon.CloudDownload
+import com.wonddak.fonthelper.theme.icon.FolderZip
+import com.wonddak.fonthelper.theme.icon.FontHelperIcons
 
 @Composable
 internal fun SetupTabContent(
@@ -161,25 +164,44 @@ internal fun FontsTabContent(
                 }
                 DragDropFiles(
                     modifier = Modifier.align(Alignment.CenterHorizontally),
-                    updateNormalFontList = { index, path -> onFontDataChange(fontData.updateNormalFont(index, path)) },
-                    updateItalicFontList = { index, path -> onFontDataChange(fontData.updateItalicFont(index, path)) },
+                    updateNormalFontList = { index, path ->
+                        onFontDataChange(
+                            fontData.updateNormalFont(
+                                index,
+                                path
+                            )
+                        )
+                    },
+                    updateItalicFontList = { index, path ->
+                        onFontDataChange(
+                            fontData.updateItalicFont(
+                                index,
+                                path
+                            )
+                        )
+                    },
                 )
                 FontTable(
                     project = project,
                     normalFontList = fontData.normalFontPath,
                     italicFontList = fontData.italicFontPath,
-                    updateNormalFontList = { index, path -> onFontDataChange(fontData.updateNormalFont(index, path)) },
-                    updateItalicFontList = { index, path -> onFontDataChange(fontData.updateItalicFont(index, path)) },
+                    updateNormalFontList = { index, path ->
+                        onFontDataChange(
+                            fontData.updateNormalFont(
+                                index,
+                                path
+                            )
+                        )
+                    },
+                    updateItalicFontList = { index, path ->
+                        onFontDataChange(
+                            fontData.updateItalicFont(
+                                index,
+                                path
+                            )
+                        )
+                    },
                 )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    Text(
-                        text = "Google Fonts import is experimental.",
-                        style = MaterialTheme.typography.caption,
-                    )
-                }
             }
         }
     }
@@ -198,9 +220,27 @@ private fun FontImportActions(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            ActionButton(" Clear Cache", Icons.Default.Delete, enabled, Modifier.fillMaxWidth(), onClearCache)
-            ActionButton(" Import ZIP", Icons.Default.AddCircle, enabled, Modifier.fillMaxWidth(), onImportZip)
-            ActionButton(" Google Fonts (Beta)", Icons.Default.Search, enabled, Modifier.fillMaxWidth(), onOpenGoogleFonts)
+            ActionButton(
+                " Clear Cache",
+                Icons.Default.Delete,
+                enabled,
+                Modifier.fillMaxWidth(),
+                onClearCache
+            )
+            ActionButton(
+                " Import ZIP",
+                FontHelperIcons.FolderZip,
+                enabled,
+                Modifier.fillMaxWidth(),
+                onImportZip
+            )
+            ActionButton(
+                " Google Fonts",
+                FontHelperIcons.CloudDownload,
+                enabled,
+                Modifier.fillMaxWidth(),
+                onOpenGoogleFonts
+            )
         }
         return
     }
@@ -211,7 +251,13 @@ private fun FontImportActions(
     ) {
         ActionButton(" Clear Cache", Icons.Default.Delete, enabled, Modifier, onClearCache)
         ActionButton(" Import ZIP", Icons.Default.AddCircle, enabled, Modifier, onImportZip)
-        ActionButton(" Google Fonts (Beta)", Icons.Default.Search, enabled, Modifier, onOpenGoogleFonts)
+        ActionButton(
+            " Google Fonts (Beta)",
+            Icons.Default.Search,
+            enabled,
+            Modifier,
+            onOpenGoogleFonts
+        )
     }
 }
 

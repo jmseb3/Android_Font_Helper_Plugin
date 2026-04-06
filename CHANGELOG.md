@@ -3,9 +3,10 @@
 ## [Unreleased]
 
 ## [2.2.0]
-- Changed: Migrated project structure to align with JetBrains `intellij-platform-compose-plugin-template`.
-- Changed: Moved plugin metadata and release notes flow to README/CHANGELOG based patching.
-- Changed: Standardized Gradle configuration with template-style properties and plugin setup.
+- Improved: Generated Kotlin identifiers now preserve readable camel case from the entered class name.
+- Improved: Generated font resource names now use `snake_case` for clearer Android and Compose resource references.
+- Improved: Main screen UI was split into focused section/support files to keep the tool window flow easier to maintain.
+- Improved: ZIP and Google Fonts import branching was moved out of the main screen into import support utilities for more predictable behavior.
 
 ## [2.1.3]
 - Fixed: Restored Compose desktop runtime packaging for all target platforms to prevent missing Skiko native library errors.

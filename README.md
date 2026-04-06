@@ -22,7 +22,7 @@ Font Helper generates Kotlin `FontFamily` code and automatically copies font fil
 ## Install
 
 Search **Font Helper** in JetBrains Marketplace, or install from:
-- [https://plugins.jetbrains.com/plugin/21596-fonthelper](https://plugins.jetbrains.com/plugin/21596-fonthelper)
+- [Plugin page](https://plugins.jetbrains.com/plugin/21596)
 
 ## Open Tool Window
 
@@ -75,7 +75,7 @@ If multiple files match the same slot, Font Helper opens a conflict dialog with 
 ![google-duplicate](./screenshot/02_2_from_google_fonts_duplicate_dialog.png)
 
 
-## Google Fonts (Beta)
+## Google Fonts
 
 Google import uses `download/list?family=...` metadata first, then downloads only selected files.
 

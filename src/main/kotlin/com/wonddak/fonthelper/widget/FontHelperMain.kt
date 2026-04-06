@@ -93,6 +93,7 @@ fun FontHelperMain(
 
                 LaunchedEffect(fontData.selectedModule) {
                     val module = fontData.selectedModule ?: return@LaunchedEffect
+                    // Respect a manually entered package name and only auto-fill when the field is still plugin-controlled.
                     if (packageNameTouchedByUser && fontData.packageName.isNotBlank()) return@LaunchedEffect
                     val resolvedPackage = PackageNameResolver.resolve(module) ?: return@LaunchedEffect
                     fontData = fontData.copy(packageName = resolvedPackage)
@@ -237,6 +238,8 @@ fun FontHelperMain(
                                 try {
                                     val settings = com.wonddak.fonthelper.setting.FontMatchSettingsService.getInstance().state
                                     val refs = GoogleFontsUtil.fetchFamilyFontFileRefs(family)
+                                    // Google Fonts may expose multiple files for the same slot, so selection is split
+                                    // into an auto-apply path and a follow-up conflict dialog path.
                                     val slotCandidates = refs
                                         .mapNotNull { ref ->
                                             val shortName = ref.filename.substringAfterLast('/').substringAfterLast('\\')

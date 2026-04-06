@@ -8,6 +8,7 @@ internal fun analyzeImportedFonts(
     files: List<File>,
     settings: FontMatchSettingsState,
 ): ImportAnalysis {
+    // Group every matched file by its target slot so callers can auto-apply singles and surface real conflicts.
     val groups = linkedMapOf<FontSlotKey, MutableList<File>>()
     var matchedCount = 0
     files.forEach { file ->
@@ -36,6 +37,7 @@ internal fun applyImportedFonts(
 }
 
 internal fun removeManagedDownloadedPaths(current: FontData): FontData {
+    // Only clear files that were downloaded into the plugin-managed cache; keep user-owned paths intact.
     val cleanedNormal = current.normalFontPath.map { font ->
         if (font != null && GoogleFontsUtil.isManagedDownloadedFile(font.path)) null else font
     }

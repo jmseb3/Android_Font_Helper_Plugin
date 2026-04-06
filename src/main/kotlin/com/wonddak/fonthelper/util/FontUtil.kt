@@ -83,6 +83,7 @@ object FontUtil {
         fontData: FontData
     ) {
         var generatedFilePath: String? = null
+        // Build the class content once before mutating VFS state so write steps stay focused on I/O.
         val classContent = buildFontFamilyContent(fontData)
         ApplicationManager.getApplication().runWriteAction {
             if (fontData.selectedModule == null) {
@@ -204,6 +205,7 @@ object FontUtil {
         classFileName: String,
         content: String,
     ) = PsiDirectoryFactory.getInstance(project).createDirectory(directory).run {
+        // Replace the generated file atomically from the plugin's point of view to keep output deterministic.
         var psiFile = findFile(classFileName)
         psiFile?.delete()
         psiFile = createFile(classFileName)

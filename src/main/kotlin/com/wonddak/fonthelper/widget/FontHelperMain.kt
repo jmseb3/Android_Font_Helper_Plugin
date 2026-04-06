@@ -37,6 +37,7 @@ import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
 import com.wonddak.fonthelper.theme.WidgetTheme
+import com.wonddak.fonthelper.util.FontSlotKey
 import com.wonddak.fonthelper.util.FontUtil
 import com.wonddak.fonthelper.util.GoogleFontsUtil
 import com.wonddak.fonthelper.util.IdeFileChooserUtil
@@ -95,8 +96,7 @@ fun FontHelperMain(
                     val module = fontData.selectedModule ?: return@LaunchedEffect
                     // Respect a manually entered package name and only auto-fill when the field is still plugin-controlled.
                     if (packageNameTouchedByUser && fontData.packageName.isNotBlank()) return@LaunchedEffect
-                    val resolvedPackage = PackageNameResolver.resolve(module) ?: return@LaunchedEffect
-                    fontData = fontData.copy(packageName = resolvedPackage)
+                    fontData = resolvePackageName(fontData) ?: return@LaunchedEffect
                 }
             }
 
@@ -178,9 +178,7 @@ fun FontHelperMain(
                                 onRefreshModules = onRefreshModules,
                                 onAutoDetectPackage = {
                                     scope.launch {
-                                        val module = fontData.selectedModule ?: return@launch
-                                        val resolvedPackage = PackageNameResolver.resolve(module) ?: return@launch
-                                        fontData = fontData.copy(packageName = resolvedPackage)
+                                        fontData = resolvePackageName(fontData) ?: return@launch
                                         packageNameTouchedByUser = false
                                     }
                                 },
@@ -232,12 +230,12 @@ fun FontHelperMain(
                                                 result.autoSelectedBySlot,
                                                 downloadedByUrl,
                                             )
-                                            val updated = applyImportedFonts(fontData, assignments)
-                                            fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {
-                                                updated.copy(fileName = family.toSafeClassName())
-                                            } else {
-                                                updated
-                                            }
+                                            fontData = applyImportedFontsWithOptionalRename(
+                                                current = fontData,
+                                                assignments = assignments,
+                                                autoRenameClassName = autoRenameClassFromGoogle,
+                                                familyName = family,
+                                            )
                                             googleImportMessage =
                                                 "\"$family\" imported. ${assignments.size} variants mapped."
                                         }
@@ -273,12 +271,12 @@ fun FontHelperMain(
                                     )
                                     val assignments = resolveDownloadedAssignments(allSelections, downloadedByUrl)
 
-                                    val updated = applyImportedFonts(fontData, assignments)
-                                    fontData = if (autoRenameClassFromGoogle && assignments.isNotEmpty()) {
-                                        updated.copy(fileName = state.family.toSafeClassName())
-                                    } else {
-                                        updated
-                                    }
+                                    fontData = applyImportedFontsWithOptionalRename(
+                                        current = fontData,
+                                        assignments = assignments,
+                                        autoRenameClassName = autoRenameClassFromGoogle,
+                                        familyName = state.family,
+                                    )
                                     googleImportMessage =
                                         "\"${state.family}\" imported. ${assignments.size} variants mapped."
                                 } catch (e: Exception) {
@@ -380,4 +378,23 @@ internal fun String.toSafeClassName(): String {
         part.lowercase().replaceFirstChar { c -> c.uppercase() }
     }
     return if (merged.firstOrNull()?.isDigit() == true) "Font$merged" else merged
+}
+
+private suspend fun resolvePackageName(fontData: FontData): FontData? {
+    val module = fontData.selectedModule ?: return null
+    val resolvedPackage = PackageNameResolver.resolve(module) ?: return null
+    return fontData.copy(packageName = resolvedPackage)
+}
+
+private fun applyImportedFontsWithOptionalRename(
+    current: FontData,
+    assignments: Map<FontSlotKey, File>,
+    autoRenameClassName: Boolean,
+    familyName: String,
+): FontData {
+    val updated = applyImportedFonts(current, assignments)
+    if (!autoRenameClassName || assignments.isEmpty()) {
+        return updated
+    }
+    return updated.copy(fileName = familyName.toSafeClassName())
 }

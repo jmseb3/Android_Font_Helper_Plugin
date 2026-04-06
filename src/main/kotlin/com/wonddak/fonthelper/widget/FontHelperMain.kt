@@ -37,10 +37,17 @@ import com.intellij.openapi.project.Project
 import com.wonddak.fonthelper.model.FontData
 import com.wonddak.fonthelper.model.ModuleData
 import com.wonddak.fonthelper.theme.WidgetTheme
+import com.wonddak.fonthelper.util.FontSlotKey
 import com.wonddak.fonthelper.util.FontUtil
+import com.wonddak.fonthelper.util.GoogleFileSelectionState
 import com.wonddak.fonthelper.util.GoogleFontsUtil
 import com.wonddak.fonthelper.util.IdeFileChooserUtil
+import com.wonddak.fonthelper.util.ImportConflict
+import com.wonddak.fonthelper.util.ImportConflictSelectionState
 import com.wonddak.fonthelper.util.PackageNameResolver
+import com.wonddak.fonthelper.util.analyzeImportedFonts
+import com.wonddak.fonthelper.util.applyImportedFonts
+import com.wonddak.fonthelper.util.removeManagedDownloadedPaths
 import kotlinx.coroutines.launch
 import java.io.File
 
